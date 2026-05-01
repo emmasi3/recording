@@ -1,0 +1,27 @@
+# ninja log v6
+43	916	7963119067557076	CMakeFiles/LocalRecordRtmpStreamer.dir/src/infra/FfmpegContextManager.cpp.obj	8cfb83bc42afc616
+24	956	7963119067366681	CMakeFiles/LocalRecordRtmpStreamer.dir/src/core/PacketWrapper.cpp.obj	e281133adf92499c
+34	1057	7963119067466899	CMakeFiles/LocalRecordRtmpStreamer.dir/src/core/ErrorPolicy.cpp.obj	602814372df5ba92
+75	1181	7963119067888228	CMakeFiles/LocalRecordRtmpStreamer.dir/src/adapters/capture/DshowAudioCapture.cpp.obj	b8cfffb95251006f
+70	1205	7963119067823016	CMakeFiles/LocalRecordRtmpStreamer.dir/src/adapters/capture/DxgiScreenCapture.cpp.obj	c04d68baa121a0ab
+65	1250	7963119067777897	CMakeFiles/LocalRecordRtmpStreamer.dir/src/factory/ComponentFactory.cpp.obj	d49b005f17800145
+52	1266	7963119067642332	CMakeFiles/LocalRecordRtmpStreamer.dir/src/pipeline/PipelineNodeBase.cpp.obj	8ec7025ed6790b99
+80	1333	7963119067930298	CMakeFiles/LocalRecordRtmpStreamer.dir/src/adapters/codec/FfmpegEncoder.cpp.obj	38ad533f3f46d61c
+47	1421	7963119067597160	CMakeFiles/LocalRecordRtmpStreamer.dir/src/config/Config.cpp.obj	530176ead0bec69
+56	1442	7963119067687500	CMakeFiles/LocalRecordRtmpStreamer.dir/src/pipeline/Nodes.cpp.obj	71e0acbb9d19040
+61	1453	7963119067732700	CMakeFiles/LocalRecordRtmpStreamer.dir/src/pipeline/PipelineOrchestrator.cpp.obj	3b5b5876da291d1d
+39	1481	7963119067511954	CMakeFiles/LocalRecordRtmpStreamer.dir/src/infra/Logger.cpp.obj	1b2fc4d220f16795
+925	1769	7963119076395111	CMakeFiles/LocalRecordRtmpStreamer.dir/src/adapters/output/RtmpMuxerStreamer.cpp.obj	9a13bd28b93a2802
+28	2145	7963119067406686	CMakeFiles/LocalRecordRtmpStreamer.dir/src/core/Clock.cpp.obj	e5195584d7a73e35
+20	2342	7963119067331023	CMakeFiles/LocalRecordRtmpStreamer.dir/src/main.cpp.obj	306e9f629cb16812
+2343	2946	7963119090554130	LocalRecordRtmpStreamer.exe	fe983df48551b421
+45	843	7963119164222892	CMakeFiles/LocalRecordRtmpStreamer.dir/src/adapters/capture/DshowAudioCapture.cpp.obj	b8cfffb95251006f
+40	844	7963119164177734	CMakeFiles/LocalRecordRtmpStreamer.dir/src/adapters/capture/DxgiScreenCapture.cpp.obj	c04d68baa121a0ab
+49	845	7963119164268092	CMakeFiles/LocalRecordRtmpStreamer.dir/src/adapters/codec/FfmpegEncoder.cpp.obj	38ad533f3f46d61c
+54	853	7963119164313167	CMakeFiles/LocalRecordRtmpStreamer.dir/src/adapters/output/RtmpMuxerStreamer.cpp.obj	9a13bd28b93a2802
+36	871	7963119164132629	CMakeFiles/LocalRecordRtmpStreamer.dir/src/factory/ComponentFactory.cpp.obj	d49b005f17800145
+23	923	7963119164018019	CMakeFiles/LocalRecordRtmpStreamer.dir/src/pipeline/PipelineNodeBase.cpp.obj	8ec7025ed6790b99
+28	998	7963119164058020	CMakeFiles/LocalRecordRtmpStreamer.dir/src/pipeline/Nodes.cpp.obj	71e0acbb9d19040
+32	1031	7963119164098006	CMakeFiles/LocalRecordRtmpStreamer.dir/src/pipeline/PipelineOrchestrator.cpp.obj	3b5b5876da291d1d
+19	1922	7963119163967717	CMakeFiles/LocalRecordRtmpStreamer.dir/src/main.cpp.obj	306e9f629cb16812
+1922	2251	7963119182995710	LocalRecordRtmpStreamer.exe	fe983df48551b421

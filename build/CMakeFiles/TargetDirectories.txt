@@ -1,0 +1,3 @@
+E:/音视频/record_stream_to_rtsp/recording/build/CMakeFiles/LocalRecordRtmpStreamer.dir
+E:/音视频/record_stream_to_rtsp/recording/build/CMakeFiles/edit_cache.dir
+E:/音视频/record_stream_to_rtsp/recording/build/CMakeFiles/rebuild_cache.dir

@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="recording.vcxproj" Id="f1eff276-cd3c-4dc6-a196-f6c712cab125" />
+</Solution>
