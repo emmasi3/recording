@@ -1,1 +1,2 @@
 # recording
+此项目采用DXGI高性能录屏技术实现从windows端录制音视频并推流到RTMP服务器部分
