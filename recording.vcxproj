@@ -158,7 +158,9 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="include\infra\Logger.h" />
-    <ClInclude Include="include\libav_h.h" />
+    <ClInclude Include="include\libav_h.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="include\pipeline\Nodes.h" />
     <ClInclude Include="include\pipeline\PipelineNodeBase.h" />
     <ClInclude Include="include\pipeline\PipelineOrchestrator.h" />

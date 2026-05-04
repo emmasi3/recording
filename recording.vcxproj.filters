@@ -90,13 +90,13 @@
     <ClInclude Include="include\adapters\output\FfmpegMuxerStreamer.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="include\libav_h.h">
-      <Filter>资源文件</Filter>
-    </ClInclude>
     <ClInclude Include="include\adapters\codec\FfmpegDecoder.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="include\event\ThreadEventSDL.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\libav_h.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
