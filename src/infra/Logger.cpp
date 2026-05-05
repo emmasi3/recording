@@ -14,7 +14,7 @@ namespace
     {
         av_log_init()
         {
-            av_log_set_level(AV_LOG_DEBUG);
+            av_log_set_level(AV_LOG_INFO);
         }
     };
 

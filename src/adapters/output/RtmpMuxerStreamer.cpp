@@ -273,6 +273,7 @@ namespace streamer {
                 done = true;
             }
             int cmp = av_compare_ts(m_last_video_pts, v_tb, m_last_audio_pts, a_tb);
+            LOG_INFO(g_logger) << "m_last_video_pts: " << m_last_video_pts << " m_lase_audio_pts: " << m_last_audio_pts;
 
             if (done)
             {
@@ -313,7 +314,7 @@ namespace streamer {
                 }
             }
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            //std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
 
         if (m_vEncoder) {
@@ -323,7 +324,7 @@ namespace streamer {
             m_aEncoder->Flush([&](AVPacket* pkt) { return m_muxer->WritePacket(pkt) ? 0 : -1; });
         }
 
-        LOG_DEBUG(g_logger) << "RtmpStreamer::MuxThreadProc() is finished";
+        LOG_INFO(g_logger) << "RtmpStreamer::MuxThreadProc() is finished";
     }
 
     bool RtmpStreamer::send_MuxThreadProc_to_threads() 

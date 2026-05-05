@@ -31,6 +31,42 @@ namespace streamer
 		return ptr;
 	}
 
+	//void AudioFifoQueue::Push(AVFrame* item)
+	//{
+	//	do
+	//	{
+	//		// 加锁
+	//		std::unique_lock<std::mutex> lock(m_mtx);
+
+	//		// 关键修复：若本次写入超过当前总容量，先扩容，避免 wait 永远 false
+	//		const int curSize = av_audio_fifo_size(m_aFifoBuf);
+	//		const int curCap = curSize + av_audio_fifo_space(m_aFifoBuf);
+	//		if (item->nb_samples > curCap)
+	//		{
+	//			const int newCap = curSize + item->nb_samples + m_nbSamples; // 留一点余量
+	//			if (av_audio_fifo_realloc(m_aFifoBuf, newCap) < 0)
+	//			{
+	//				LOG_ERROR(g_logger) << "av_audio_fifo_realloc failed, need=" << item->nb_samples;
+	//				return;
+	//			}
+	//		}
+	//		// 条件变量
+	//		m_cvNotFull.wait(lock, [this, item] {
+	//			return av_audio_fifo_space(m_aFifoBuf) >= item->nb_samples;
+	//			});
+	//		// 写入
+	//		int ret = av_audio_fifo_write(m_aFifoBuf, (void* const*)item->data, item->nb_samples);
+	//		if (ret < 0)
+	//		{
+	//			LOG_ERROR(g_logger) << "Failed to write newFrame to m_aFifoBuf!";
+	//			return;
+	//		}
+
+	//	} while (0);
+	//	// 通知不空
+	//	m_cvNotEmpty.notify_one();
+	//}
+
 	void AudioFifoQueue::Push(AVFrame* item)
 	{
 		do
@@ -38,34 +74,57 @@ namespace streamer
 			// 加锁
 			std::unique_lock<std::mutex> lock(m_mtx);
 
-			// 关键修复：若本次写入超过当前总容量，先扩容，避免 wait 永远 false
-			const int curSize = av_audio_fifo_size(m_aFifoBuf);
-			const int curCap = curSize + av_audio_fifo_space(m_aFifoBuf);
-			if (item->nb_samples > curCap)
+			// 获取当前 FIFO 内积压的样本数量
+			int curSize = av_audio_fifo_size(m_aFifoBuf);
+			int sampleRate = item->sample_rate > 0 ? item->sample_rate : 44100;
+
+			// 【核心修改】：最大容忍者延迟积压设为 2 秒 （约 88200 个采样点）
+			int max_samples_limit = sampleRate * 2;
+
+			// 如果积压数据太多，说明消费（上传）来不及了，为了低延迟，必须主动丢弃最旧的声音
+			if (curSize > (max_samples_limit / 2))
 			{
-				const int newCap = curSize + item->nb_samples + m_nbSamples; // 留一点余量
-				if (av_audio_fifo_realloc(m_aFifoBuf, newCap) < 0)
+				// 计算需要丢弃多少旧样本，才能把新的样本全部塞进去，且刚好不超过上限
+				//static int64_t drain_counts = 0;
+				//LOG_WARN(g_logger) << "curSize > 2s delay_counts: " << drain_counts++;
+				int drain_size = (curSize + item->nb_samples) - (max_samples_limit / 2);
+				if (drain_size > 0)
 				{
-					LOG_ERROR(g_logger) << "av_audio_fifo_realloc failed, need=" << item->nb_samples;
-					return;
+					// av_audio_fifo_drain(m_aFifoBuf, drain_size); 把队列尾(最旧)的数据丢弃
+					av_audio_fifo_drain(m_aFifoBuf, drain_size);
 				}
 			}
+
+			// 走到这一步，剩余的大小肯定能装下新的音频帧
+			// 但如果物理空间仍然不够，才做真正的 realloc
+			curSize = av_audio_fifo_size(m_aFifoBuf);
+			int curCap = curSize + av_audio_fifo_space(m_aFifoBuf);
+			if (item->nb_samples > curCap)
+			{
+				// 物理扩容
+				//static int64_t realloc_counts = 0;
+				//LOG_INFO(g_logger) << "av_audio_fifo_realloc() counts: " << realloc_counts++;
+				int newCap = curSize + item->nb_samples + 1024;
+				av_audio_fifo_realloc(m_aFifoBuf, newCap);
+			}
+
 			// 条件变量
 			m_cvNotFull.wait(lock, [this, item] {
 				return av_audio_fifo_space(m_aFifoBuf) >= item->nb_samples;
 				});
-			// 写入
+
+			// 写入当前新提取的帧（保证始终拿到最新的时钟轴数据）
 			int ret = av_audio_fifo_write(m_aFifoBuf, (void* const*)item->data, item->nb_samples);
 			if (ret < 0)
 			{
-				LOG_ERROR(g_logger) << "Failed to write newFrame to m_aFifoBuf!";
+				// LOG_ERROR(g_logger) << "Failed to write newFrame to m_aFifoBuf!";
 				return;
 			}
 
 		} while (0);
-		// 通知不空
+
+		// 通知消费者队列不为空
 		m_cvNotEmpty.notify_one();
-		
 	}
 
 	std::optional<AVFrame*> AudioFifoQueue::TryPop()
