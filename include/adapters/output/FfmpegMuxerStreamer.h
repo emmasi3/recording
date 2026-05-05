@@ -94,20 +94,20 @@ namespace streamer
         void SetAudioEncoder(IEncoder::ptr aEncoder) { m_aEncoder = aEncoder; }
 
         /**
-         * @brief 连接 RTMP 服务端或启动本地文件写入流（初始化各组件并启动线程）
-         *
-         * @return 是否连接成功
-         */
+        * @brief 连接 RTMP 服务端或启动本地文件写入流（初始化各组件并启动线程）
+        *
+        * @return 是否连接成功
+        */
         bool Connect() override;
 
         /**
-         * @brief 发送一个编码包（暂时可不用，本类内部自驱拉取并发送）
-         */
+        * @brief 发送一个编码包（暂时可不用，本类内部自驱拉取并发送）
+        */
         bool SendPacket(const PacketWrapperPtr& packet) override;
 
         /**
-         * @brief 断开流并收尾
-         */
+        * @brief 断开流并收尾
+        */
         void Disconnect() override;
 
         /*
