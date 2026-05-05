@@ -245,13 +245,6 @@ namespace streamer {
 			av_packet_unref(pkt);
 			av_frame_unref(frame);
 			av_frame_make_writable(newFrame);
-			//av_samples_set_silence(
-			//	newFrame->data,
-			//	0,
-			//	newFrame->nb_samples,
-			//	newFrame->ch_layout.nb_channels,
-			//	(AVSampleFormat)newFrame->format
-			//);
 		}
 
 		//结束后的收尾工作

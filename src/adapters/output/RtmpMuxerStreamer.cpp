@@ -285,12 +285,13 @@ namespace streamer {
 
             if (cmp <= 0) 
             {
-                if (dxgiCap) {
+                if (dxgiCap) 
+                {
                     FramePtr vFrame = dxgiCap->ReadFrame(v_frame_idx);
                     if (vFrame && dxgiCap->isPass(v_frame_idx)) 
                     {
                         m_vEncoder->Encode(vFrame, [&](AVPacket* pkt) -> int {
-                            m_last_video_pts = pkt->pts;
+                            m_last_video_pts = pkt->dts != AV_NOPTS_VALUE ? pkt->dts : pkt->pts;
                             return m_muxer->WritePacket(pkt) ? 0 : -1;
                             });
                         ++v_frame_idx;
@@ -305,7 +306,7 @@ namespace streamer {
                     if (aFrame) 
                     {
                         m_aEncoder->Encode(aFrame, [&](AVPacket* pkt) -> int {
-                            m_last_audio_pts = pkt->pts;
+                            m_last_audio_pts = pkt->dts; // 修改为用 dts 或 pts 记录都可以，但是一定要记录
                             return m_muxer->WritePacket(pkt) ? 0 : -1;
                             });
                     }
