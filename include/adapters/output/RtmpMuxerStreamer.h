@@ -53,7 +53,7 @@ private:
     uint64_t m_vIndex;
     uint64_t m_aIndex;
     
-    struct AVFormatContext* m_ctx = nullptr;
+    AVFormatContext* m_ctx = nullptr;
 };
 
 /// <summary>
@@ -76,8 +76,8 @@ public:
 
     /**
     * @brief 连接 RTMP 服务端
-    *
     * @return 是否连接成功
+    * @note 当前采用 ffmpeg 内部实现好的 ffrtmp 功能，也就是让ffmpeg底层自己处理 rtmp 数据包的封装和发送
     */
     bool Connect() override;
 

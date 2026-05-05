@@ -9,6 +9,7 @@
 #include <functional>
 
 namespace streamer {
+    static streamer::ILogger::ptr g_logger = streamer::ILogger::ptr(new streamer::ConsoleLogger(streamer::LogLevel::Debug));
 
     RtmpMuxer::RtmpMuxer(const std::string& url) 
         : m_url(url), m_close(false), m_vIndex(0), m_aIndex(0), m_ctx(nullptr) 
@@ -20,8 +21,11 @@ namespace streamer {
         Close();
     }
 
-    IMuxer::ptr RtmpMuxer::createNew(const std::string& url) {
-        return std::make_shared<RtmpMuxer>(url);
+    IMuxer::ptr RtmpMuxer::createNew(const std::string& url) 
+    {
+        IMuxer::ptr ptr = std::make_shared<RtmpMuxer>(url);
+
+        return ptr;
     }
 
     bool RtmpMuxer::Open() 
@@ -44,22 +48,39 @@ namespace streamer {
         bool needVideo = (m_ctx->oformat->video_codec != AV_CODEC_ID_NONE);
         bool needAudio = (m_ctx->oformat->audio_codec != AV_CODEC_ID_NONE);
 
-        if (!needVideo && !needAudio) return false;
+        if (!needVideo && !needAudio)
+        {
+            LOG_ERROR(g_logger) << "m_ctx video && audio not needed?";
+            return false;
+        }
 
         if (needVideo)
         {
             v_outStream = avformat_new_stream(m_ctx, nullptr);
-            if (!v_outStream) return false;
+            if (!v_outStream)
+            {
+                LOG_ERROR(g_logger) << "v_outStream = avformat_new_stream() failed";
+                return false;
+            }
 
             if (!m_vEncoder)
             {
                 m_vEncoder = VideoFfmpegEncoder::createNew(v_outStream->index, AVRational{ 1, 25 });
             }
 
-            if (!m_vEncoder || !m_vEncoder->getCtx()) return false;
+            if (!m_vEncoder || !m_vEncoder->getCtx())
+            {
+                LOG_ERROR(g_logger) << "!m_vEncoder || !m_vEncoder->getCtx() ? why?";
+                return false;
+            }
 
             ret = avcodec_parameters_from_context(v_outStream->codecpar, m_vEncoder->getCtx());
-            if (ret < 0) return false;
+            if (ret < 0)
+            {
+                LOG_ERROR(g_logger) << "avcodec_parameters_from_context(v_outStream->codecpar, m_vEncoder->getCtx()) return ret: "
+                    << ret;
+                return false;
+            }
 
             v_outStream->codecpar->codec_tag = 0;
             m_vIndex = v_outStream->index;
@@ -68,11 +89,18 @@ namespace streamer {
         if (needAudio)
         {
             a_outStream = avformat_new_stream(m_ctx, nullptr);
-            if (!a_outStream) return false;
+            if (!a_outStream)
+            {
+                LOG_ERROR(g_logger) << "a_outStream = avformat_new_stream() failed";
+                return false;
+            }
 
             AVCodecID audioCodecId = m_ctx->oformat->audio_codec;
             m_aEncoder = AudioFfmpegEncoder::createNew(audioCodecId, { 0, 0 }, a_outStream->index);
-            if (!m_aEncoder || !m_aEncoder->getCtx()) return false;
+            if (!m_aEncoder || !m_aEncoder->getCtx())
+            {
+                return false;
+            }
 
             ret = avcodec_parameters_from_context(a_outStream->codecpar, m_aEncoder->getCtx());
             if (ret < 0) return false;
@@ -81,6 +109,7 @@ namespace streamer {
             m_aIndex = a_outStream->index;
         }
 
+        // 打开网络 IO
         if (!(m_ctx->oformat->flags & AVFMT_NOFILE))
         {
             ret = avio_open2(&m_ctx->pb, m_url.c_str(), AVIO_FLAG_WRITE, nullptr, nullptr);
@@ -113,15 +142,21 @@ namespace streamer {
 
     bool RtmpMuxer::WritePacket(const PacketWrapperPtr& packet) 
     {
-        if (!packet || !packet->Get()) return false;
-        return WritePacket(packet->Get());
+        LOG_WARN(g_logger) << "RtmpMuxer::WritePacket(const PacketWrapperPtr& packet) is not define, please to use to "
+            << "RtmpMuxer::WritePacket(AVPacket* packet)";
+        return false;
     }
 
     bool RtmpMuxer::WritePacket(AVPacket* packet) 
     {
-        if (!m_ctx || !packet) return false;
+        if (!m_ctx || !packet) 
+        {
+            return false;
+        }
         int ret = av_interleaved_write_frame(m_ctx, packet);
-        if (ret < 0 && ret != AVERROR(EAGAIN)) {
+        if (ret < 0 && ret != AVERROR(EAGAIN)) 
+        {
+            LOG_ERROR(g_logger) << "av_interleaved_write_frame(m_ctx, packet) return ret: " << ret;
             return false;
         }
         return true;
@@ -141,7 +176,6 @@ namespace streamer {
                 avio_closep(&m_ctx->pb);
             }
             avformat_free_context(m_ctx);
-            m_ctx = nullptr;
         }
     }
 
@@ -159,14 +193,17 @@ namespace streamer {
 
     IStreamer::ptr RtmpStreamer::createNew(const std::string& url) 
     {
-        return std::make_shared<RtmpStreamer>(url);
+        IStreamer::ptr ptr = std::make_shared<RtmpStreamer>(url);
+
+        return ptr;
     }
 
-    bool RtmpStreamer::Connect() {
+    bool RtmpStreamer::Connect() 
+    {
         if (m_muxer)
         {
             bool res = m_muxer->Open();
-            if (res) 
+            if (res)
             {
                 return send_MuxThreadProc_to_threads();
             }
@@ -174,14 +211,17 @@ namespace streamer {
         return false;
     }
 
-    bool RtmpStreamer::SendPacket(const PacketWrapperPtr& packet) {
+    bool RtmpStreamer::SendPacket(const PacketWrapperPtr& packet) 
+    {
         return true;
     }
 
-    void RtmpStreamer::Disconnect() {
-    if (m_muxer) {
-        m_muxer->Close();
-    }
+    void RtmpStreamer::Disconnect()
+    {
+        if (m_muxer)
+        {
+            m_muxer->Close();
+        }
     }
 
     void RtmpStreamer::MuxThreadProc() 
@@ -195,8 +235,8 @@ namespace streamer {
         auto dshow_audioCap = std::dynamic_pointer_cast<streamer::DshowAudioCapture>(audioCap);
         int v_frame_idx = 0;
 
-        AVRational v_tb = vEncPtr ? vEncPtr->get_vOut_time_base() : AVRational{1, 1000};
-        AVRational a_tb = aEncPtr ? aEncPtr->get_aOut_time_base() : AVRational{1, 1000};
+        AVRational v_tb = vEncPtr->get_vOut_time_base();
+        AVRational a_tb = aEncPtr->get_aOut_time_base();
 
         bool done = false;
     
@@ -256,6 +296,8 @@ namespace streamer {
         if (m_aEncoder) {
             m_aEncoder->Flush([&](AVPacket* pkt) { return m_muxer->WritePacket(pkt) ? 0 : -1; });
         }
+
+        LOG_DEBUG(g_logger) << "RtmpStreamer::MuxThreadProc() is finished";
     }
 
     bool RtmpStreamer::send_MuxThreadProc_to_threads() 

@@ -14,10 +14,6 @@ namespace streamer
         m_aIndex(-1),
         m_vIndex(-1)
     {
-        // 视频编码器
-        // m_vEncoder = VideoFfmpegEncoder::createNew(0, AVRational{ 1, 25 });
-        // 音频编码器
-        // m_aEncoder = AudioFfmpegEncoder::createNew(,)
     }
 
     streamer::LocalMuxer::~LocalMuxer()
@@ -236,7 +232,7 @@ namespace streamer
     {
         LOG_WARN(g_logger) << "bool LocalMuxer::WritePacket(const PacketWrapperPtr& packet) not define, "
             "please use WritePacket(AVPacket* packet)";
-        return true;
+        return false;
     }
 
     bool LocalMuxer::WritePacket(AVPacket* packet)
