@@ -170,6 +170,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\adapters\capture\Hwdevice_d3d11.cpp" />
+    <ClCompile Include="RTMP_使用ffmpeg底层封装好的API进行网络传输出现断开连接的情况.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="src\adapters\capture\DshowAudioCapture.cpp" />
     <ClCompile Include="src\adapters\capture\DxgiScreenCapture.cpp" />
     <ClCompile Include="src\adapters\codec\FfmpegDecoder.cpp" />
@@ -219,7 +222,12 @@
     <ClCompile Include="test_logger.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="test_Muxer_Streamer.cpp" />
+    <ClCompile Include="test_Muxer_Streamer.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="test_RTMP_Muxer_Streamer.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="test_ThreadEventSDL_AudioQueue.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClCompile>

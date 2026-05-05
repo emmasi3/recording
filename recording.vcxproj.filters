@@ -212,5 +212,11 @@
     <ClCompile Include="src\adapters\output\FfmpegMuxerStreamer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="test_RTMP_Muxer_Streamer.cpp">
+      <Filter>test_moudle</Filter>
+    </ClCompile>
+    <ClCompile Include="RTMP_使用ffmpeg底层封装好的API进行网络传输出现断开连接的情况.cpp">
+      <Filter>问题&amp;思考&amp;</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

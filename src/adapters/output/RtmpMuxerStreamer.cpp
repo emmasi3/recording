@@ -184,6 +184,8 @@ namespace streamer {
     RtmpStreamer::RtmpStreamer(const std::string& url)
         : m_url(url) 
     {
+        // 创建 rtmp 专属封装器实例
+        m_muxer = RtmpMuxer::createNew(url);
     }
 
     RtmpStreamer::~RtmpStreamer()
@@ -194,6 +196,11 @@ namespace streamer {
     IStreamer::ptr RtmpStreamer::createNew(const std::string& url) 
     {
         IStreamer::ptr ptr = std::make_shared<RtmpStreamer>(url);
+        // 打开网络部件
+        if (!ptr->Connect())
+        {
+            return nullptr;
+        }
 
         return ptr;
     }
@@ -202,13 +209,31 @@ namespace streamer {
     {
         if (m_muxer)
         {
+            // 打开 rtmp 网络连接，ffmpeg 底层会处理 rtmp 和 tcp 握手···
             bool res = m_muxer->Open();
             if (res)
             {
-                return send_MuxThreadProc_to_threads();
+                // 开启消费线程，发送数据到数据流中(依赖 av_interleaved_write_frame)
+                if (!send_MuxThreadProc_to_threads())
+                {
+                    return false;
+                }
             }
         }
-        return false;
+
+        RtmpMuxer::ptr mux_ptr = std::dynamic_pointer_cast<RtmpMuxer>(m_muxer);
+        if (!mux_ptr || !mux_ptr->get_video_encoder() || !mux_ptr->get_audio_encoder())
+        {
+            LOG_ERROR(g_logger) << "std::dynamic_pointer_cast<LocalMuxer>(m_muxer) "
+                "failed or !mux_ptr->get_video_encoder() || !mux_ptr->get_audio_encoder() is nullptr";
+            return false;
+        }
+
+        // 获取音视频编码器
+        SetVideoEncoder(mux_ptr->get_video_encoder());
+        SetAudioEncoder(mux_ptr->get_audio_encoder());
+
+        return true;
     }
 
     bool RtmpStreamer::SendPacket(const PacketWrapperPtr& packet) 

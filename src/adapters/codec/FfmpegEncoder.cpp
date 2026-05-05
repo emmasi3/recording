@@ -145,8 +145,6 @@ namespace streamer
 			return ret;
 		}
 
-		LOG_DEBUG(g_logger) << "send_frame_to_avcodec success";
-
 		do
 		{
 			// 循环接收AVPacket包
@@ -194,8 +192,6 @@ namespace streamer
 			LOG_ERROR(g_logger) << "avcodec_send_frame() failure, ret: " << ret << " errbuf: " << errbuf;
 			return ret;
 		}
-
-		LOG_DEBUG(g_logger) << "send_frame_to_avcodec success";
 
 		do
 		{
@@ -289,6 +285,11 @@ namespace streamer
 		{
 			av_opt_set(m_ctx->priv_data, "preset", "slow", 0);
 		}
+
+		/*
+		* 设置编码器上下文的标志位，若不添加该标志，会导致 Nginx-rtmp 服务器直接返回 “codec: invalid video codec header size=5”。
+		*/
+		m_ctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
 		// 创建 D3D11 硬件帧池
 		int ret = InitHWFrames_D3D11(hw_device_ctx, width, height);
