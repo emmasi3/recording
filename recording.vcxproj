@@ -170,11 +170,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\adapters\capture\Hwdevice_d3d11.cpp" />
-    <ClCompile Include="include\adapters\output\FfmpegMuxerStreamer.cpp" />
     <ClCompile Include="src\adapters\capture\DshowAudioCapture.cpp" />
     <ClCompile Include="src\adapters\capture\DxgiScreenCapture.cpp" />
     <ClCompile Include="src\adapters\codec\FfmpegDecoder.cpp" />
     <ClCompile Include="src\adapters\codec\FfmpegEncoder.cpp" />
+    <ClCompile Include="src\adapters\output\FfmpegMuxerStreamer.cpp" />
     <ClCompile Include="src\adapters\output\RtmpMuxerStreamer.cpp" />
     <ClCompile Include="src\concurrency\ConcurrentQueue.cpp" />
     <ClCompile Include="src\config\Config.cpp" />

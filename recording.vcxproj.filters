@@ -176,9 +176,6 @@
     <ClCompile Include="test_VideoFfmpegEncoder.cpp">
       <Filter>test_moudle</Filter>
     </ClCompile>
-    <ClCompile Include="include\adapters\output\FfmpegMuxerStreamer.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="一些问题描述、解答and设计思考.cpp">
       <Filter>问题&amp;思考&amp;</Filter>
     </ClCompile>
@@ -211,6 +208,9 @@
     </ClCompile>
     <ClCompile Include="test_Muxer_Streamer.cpp">
       <Filter>test_moudle</Filter>
+    </ClCompile>
+    <ClCompile Include="src\adapters\output\FfmpegMuxerStreamer.cpp">
+      <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
