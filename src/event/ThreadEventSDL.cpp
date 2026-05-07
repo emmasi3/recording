@@ -14,6 +14,17 @@ namespace streamer
 
 	void SDL_event_Thread::Start()
 	{
+		// std::this_thread::sleep_for(std::chrono::seconds(5));
+		// 开启所有线程函数
+		{
+			// 加锁
+			std::lock_guard<std::mutex> lock(m_mtx);
+			for (auto& func : m_thread_funcs)
+			{
+				m_threads.emplace_back(func);
+			}
+		}
+
 		SDL_Window* window = SDL_CreateWindow("Invisible Window", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480, SDL_WINDOW_SHOWN);
 		if (!window) {
 			SDL_Log("Window could not be created! SDL_Error: %s\n", SDL_GetError());
@@ -60,11 +71,15 @@ namespace streamer
 		// 修改状态 -- 终止
 		m_state = STATE::Term;
 
-		for (auto& t : m_threads)
 		{
-			if (t.joinable())
+			// 加锁
+			std::lock_guard<std::mutex> lock(m_mtx);
+			for (auto& t : m_threads)
 			{
-				t.join();
+				if (t.joinable())
+				{
+					t.join();
+				}
 			}
 		}
 
@@ -73,6 +88,37 @@ namespace streamer
 
 	void SDL_event_Thread::push_thread_to_vector(std::function<void()> func)
 	{
-		m_threads.emplace_back(func);
+		{
+			// 加锁
+			std::lock_guard<std::mutex> lock(m_mtx);
+			m_thread_funcs.push_back(func);
+		}
+	}
+
+	void SDL_event_Thread::push_threadfunc_to_threads(std::function<void()> func)
+	{
+		{
+			// 加锁
+			std::lock_guard<std::mutex> lock(m_mtx);
+			m_threads.emplace_back(func);
+		}
+	}
+
+	int SDL_event_Thread::get_threadfuncs_counts() const
+	{
+		{
+			// 加锁
+			std::lock_guard<std::mutex> lock(m_mtx);
+			return m_thread_funcs.size();
+		}
+	}
+
+	int SDL_event_Thread::get_threads_counts() const
+	{
+		{
+			// 加锁
+			std::lock_guard<std::mutex> lock(m_mtx);
+			return m_threads.size();
+		}
 	}
 }

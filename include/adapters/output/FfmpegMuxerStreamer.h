@@ -125,8 +125,10 @@ namespace streamer
 
         /*
         * @brief 将消费者任务送入线程队列中，开始消费
+        * @param bool Immediately 是否立即开启该线程函数，默认为 false，注册后统一开启
+        * @return true 成功，否则失败
         */
-        bool send_MuxThreadProc_to_threads();
+        bool send_MuxThreadProc_to_threads(bool Immediately = false);
 
     private:
         IMuxer::ptr m_muxer;

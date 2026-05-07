@@ -1,6 +1,7 @@
 ﻿#include "adapters/capture/DshowAudioCapture.h"
 #include "infra/Logger.h"
 #include "event/ThreadEventSDL.h"
+#include "core/Clock.h"
 
 namespace streamer {
 
@@ -60,13 +61,15 @@ namespace streamer {
 		//这一步的分配不是必须的，会在avformat_opne_input()中自动调用 alloc() 函数
 		m_FmtCtx = avformat_alloc_context();
 
-		//打开麦克风设备录音
+		// 打开麦克风设备录音 -- 此时就已经往音频缓冲区(设备)中输入数据了
+		// std::this_thread::sleep_for(std::chrono::seconds(5));
 		ret = avformat_open_input(&m_FmtCtx, audioDeviceName.c_str(), ifmt, nullptr);
 		if (ret < 0)
 		{
 			LOG_ERROR(g_logger) << "the avformat_open_input() error:";
 			return false;
 		}
+
 
 		// 打开音频解码器
 		if (!init_audio_decoder())
@@ -95,7 +98,7 @@ namespace streamer {
 		}
 
 		// 开启音频生产者线程
-		if (!send_ReadFrameFrom_device_threads())
+		if (!send_ReadFrameFrom_device_threads(true))
 		{
 			return false;
 		}
@@ -261,15 +264,30 @@ namespace streamer {
 
     }
 
-	bool DshowAudioCapture::send_ReadFrameFrom_device_threads()
+	bool DshowAudioCapture::send_ReadFrameFrom_device_threads(bool Immediately)
 	{
-		int threads_counts = SDL::GetInstance()->get_threads_counts();
-		// 开始采集音频并送入队列
-        SDL::GetInstance()->push_thread_to_vector(std::bind(&DshowAudioCapture::ReadFrameFrom_device, this));
-		if (threads_counts == SDL::GetInstance()->get_threads_counts())
+		int threads_counts = -1;
+		if(!Immediately)
 		{
-			LOG_ERROR(g_logger) << "SDL::GetInstance()->push_thread_to_vector(std::bind(DshowAudioCapture::ReadFrameFrom_device, this)); failed";
-			return false;
+			threads_counts = SDL::GetInstance()->get_threadfuncs_counts();
+			// 注册线程函数(并不立即开启) -- 开始采集音频并送入队列
+			SDL::GetInstance()->push_thread_to_vector(std::bind(&DshowAudioCapture::ReadFrameFrom_device, this));
+			if (threads_counts == SDL::GetInstance()->get_threadfuncs_counts())
+			{
+				LOG_ERROR(g_logger) << "SDL::GetInstance()->push_thread_to_vector(std::bind(DshowAudioCapture::ReadFrameFrom_device, this)); failed";
+				return false;
+			}
+		}
+		else
+		{
+			// 立即开启该线程，并送入线程数组
+			threads_counts = SDL::GetInstance()->get_threads_counts();
+			SDL::GetInstance()->push_threadfunc_to_threads(std::bind(&DshowAudioCapture::ReadFrameFrom_device, this));
+			if (threads_counts == SDL::GetInstance()->get_threads_counts())
+			{
+				LOG_ERROR(g_logger) << "SDL::GetInstance()->push_threadfunc_to_threads(std::bind(DshowAudioCapture::ReadFrameFrom_device, this)); failed";
+				return false;
+			}
 		}
 
 		return true;
@@ -436,6 +454,18 @@ namespace streamer {
 		}
 
 		return queue_ptr->get_audio_queue_space();
+	}
+
+	bool DshowAudioCapture::drain_audio_fifo_size()
+	{
+		AudioFifoQueue::ptr queue_ptr = std::dynamic_pointer_cast<AudioFifoQueue>(m_queue);
+		if (!queue_ptr)
+		{
+			LOG_ERROR(g_logger) << "std::dynamic_pointer_cast<AudioFifoQueue>(m_queue) in DshowAudioCapture::get_audio_queue_size()";
+			return 0;
+		}
+
+		return queue_ptr->drain_audio_fifo_size();
 	}
 
 	bool DshowAudioCapture::is_audio_device(AVDeviceInfo* dev)

@@ -60,6 +60,11 @@ namespace streamer {
         */
         const uint64_t get_audio_queue_space();
 
+        /*
+        * @brief 清空队列
+        */
+        bool drain_audio_fifo_size();
+
     private:
         /*
         * @brief 判断dev是否有采集音频的功能，也就是麦克风（在类内调用，外部不可见）
@@ -96,9 +101,10 @@ namespace streamer {
 
         /*
         * @brief 将采集音频函数送入线程队列
+        * @param bool Immediately 是否立即开启该线程函数，默认为 false，注册后统一开启
         * @return 加入是否成功？
         */
-        bool send_ReadFrameFrom_device_threads();
+        bool send_ReadFrameFrom_device_threads(bool Immediately = false);
 
         /*
         * @brief 刷新音频解码器

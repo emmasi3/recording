@@ -245,6 +245,11 @@ public:
     */
     const uint64_t get_audio_queue_space();
 
+    /*
+    * @brief 清空队列
+    */
+    bool drain_audio_fifo_size();
+
 private:
 
 private:

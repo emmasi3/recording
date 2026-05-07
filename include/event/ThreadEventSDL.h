@@ -55,18 +55,44 @@ namespace streamer
 		* @brief 建议在 Start() 之前添加所有工作的线程，手动处理有可能报错
 		* @param func 线程函数
 		*/
+		// void push_thread_to_vector(std::function<void()> func);
+
+		/*
+		* @brief 接受线程函数，并放入线程函数数组中
+		* @brief 不直接开启线程，统一在 start() 中开启
+		* @note 未来可以用 unordered_map 来用键值对记录线程函数的更多信息 or ID
+		* @param func 线程函数
+		*/
 		void push_thread_to_vector(std::function<void()> func);
 
 		/*
-		* @brief 获取线程队列大小
+		* @brief 接收线程函数，并立即启动线程，再放入线程队列
+		* @brief 用于在已注册(m_thread_funcs)线程中开始其他线程
+		* @param func 线程函数
+		* @note 要避免同时访问 m_threads 线程队列
 		*/
-		int get_threads_counts() const { return m_threads.size(); }
+		void push_threadfunc_to_threads(std::function<void()> func);
+
+		/*
+		* @brief 获取线程函数数组大小，注册列表大小
+		*/
+		int get_threadfuncs_counts() const;
+
+		/*
+		* @brief 获取线程数组大小，线程数量
+		*/
+		int get_threads_counts() const;
 		
 	private:
 		// 原子变量
 		std::atomic<STATE> m_state;
+		// 存放线程函数
+		std::vector<std::function<void()>> m_thread_funcs;
 		// 线程数组
 		std::vector<std::thread> m_threads;
+		// 互斥量
+		mutable std::mutex m_mtx;
+		
 	};
 
 	// 单例模式: SDL::GetInstance()->···

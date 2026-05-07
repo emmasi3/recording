@@ -288,6 +288,8 @@ namespace streamer
 
 		/*
 		* 设置编码器上下文的标志位，若不添加该标志，会导致 Nginx-rtmp 服务器直接返回 “codec: invalid video codec header size=5”。
+		* 但是对于 .h264 这种格式的文件，该选项不能够勾选，每一帧必须有单独的 header——info，否则大多数播放器无法解析 .h264 文件，
+		* 但是对于大多数 封装格式 mp4、flv、mkv、mov···只需要开始有一个 header——info，就可以解析完成了，这和具体的格式有关
 		*/
 		m_ctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 

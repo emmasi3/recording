@@ -205,6 +205,8 @@ namespace streamer
             }
         }
 
+        // 记录
+
         return true;
     }
 
@@ -248,6 +250,10 @@ namespace streamer
             LOG_ERROR(g_logger) << "av_interleaved_write_frame failed: " << errbuf;
             return false;
         }
+        else if(ret == AVERROR(EAGAIN))
+        {
+            LOG_INFO(g_logger) << "av_interleaved_write_frame() return ret: " << ret;
+        }
 
         return true;
     }
@@ -266,7 +272,7 @@ namespace streamer
         }
 
         // 创建封装器
-        m_muxer = LocalMuxer::createNew(m_filename);
+        // m_muxer = LocalMuxer::createNew(m_filename);
     }
 
     LocalFileStreamer::~LocalFileStreamer()
@@ -293,17 +299,17 @@ namespace streamer
 
     bool LocalFileStreamer::Connect()
     {
-        LocalMuxer::ptr mux_ptr = std::dynamic_pointer_cast<LocalMuxer>(m_muxer);
-        if (!mux_ptr || !mux_ptr->get_video_encoder() || !mux_ptr->get_audio_encoder())
-        {
-            LOG_ERROR(g_logger) << "std::dynamic_pointer_cast<LocalMuxer>(m_muxer) "
-                "failed or !mux_ptr->get_video_encoder() || !mux_ptr->get_audio_encoder() is nullptr";
-            return false;
-        }
+        //LocalMuxer::ptr mux_ptr = std::dynamic_pointer_cast<LocalMuxer>(m_muxer);
+        //if (!mux_ptr)
+        //{
+        //    LOG_ERROR(g_logger) << "std::dynamic_pointer_cast<LocalMuxer>(m_muxer) "
+        //        "failed or !mux_ptr->get_video_encoder() || !mux_ptr->get_audio_encoder() is nullptr";
+        //    return false;
+        //}
 
-        // 获取音视频编码器
-        SetVideoEncoder(mux_ptr->get_video_encoder());
-        SetAudioEncoder(mux_ptr->get_audio_encoder());
+        //// 获取音视频编码器
+        //SetVideoEncoder(mux_ptr->get_video_encoder());
+        //SetAudioEncoder(mux_ptr->get_audio_encoder());
         
         // 开始写入流(线程队列)
         if (!send_MuxThreadProc_to_threads())
@@ -327,6 +333,30 @@ namespace streamer
 
     void LocalFileStreamer::MuxThreadProc()
     {
+        // 在消费者线程中，才开始执行 avformat_open_input，现在这样调用非常不好，但是要改的太多了，未来再说
+        std::this_thread::sleep_for(std::chrono::milliseconds(10)); // 先 sleep 10ms，避免同时访问 SDL::m_threads
+        do
+        {
+            // 创建封装器 -- 
+            m_muxer = LocalMuxer::createNew(m_filename);
+
+            LocalMuxer::ptr mux_ptr = std::dynamic_pointer_cast<LocalMuxer>(m_muxer);
+            if (!mux_ptr)
+            {
+                LOG_ERROR(g_logger) << "std::dynamic_pointer_cast<LocalMuxer>(m_muxer) "
+                    "failed or !mux_ptr->get_video_encoder() || !mux_ptr->get_audio_encoder() is nullptr";
+                return;
+            }
+
+            // 获取音视频编码器
+            SetVideoEncoder(mux_ptr->get_video_encoder());
+            SetAudioEncoder(mux_ptr->get_audio_encoder());
+        } while (0);
+
+        // 标记是否单独 video、audio
+        bool is_only_video = false;
+        bool is_only_audio = false;
+
         // 这里利用 RTTI (dynamic_cast) 拿到音频和视频具体的 capture 接口
         auto vEncPtr = std::dynamic_pointer_cast<VideoFfmpegEncoder>(m_vEncoder);
         auto aEncPtr = std::dynamic_pointer_cast<AudioFfmpegEncoder>(m_aEncoder);
@@ -335,21 +365,35 @@ namespace streamer
         auto audioCap = aEncPtr ? aEncPtr->get_audioCap_shared() : nullptr;
         // 获取音频采集器具体子类智能指针
         auto dshow_audioCap = std::dynamic_pointer_cast<streamer::DshowAudioCapture>(audioCap);
-        if (!dshow_audioCap)
+        if (!dshow_audioCap && audioCap)
         {
             LOG_ERROR(g_logger) << "std::dynamic_pointer_cast<streamer::DshowAudioCapture>(audioCap) return nullptr";
         }
         // 局部视频帧时间戳 -- 用来给到 dxgiCap->ReadFrame(v_frame_idx) 内部判断是否到时间了
-        int v_frame_idx = 0;
+        int64_t v_frame_idx = 0;
 
         // 音视频时间基(TimeBase) -- 输出上下文
-        //AVRational v_tb = m_vEncoder->getCtx()->time_base;
-        //AVRational a_tb = m_aEncoder->getCtx()->time_base;
-        AVRational v_tb = vEncPtr->get_vOut_time_base();
-        AVRational a_tb = aEncPtr->get_aOut_time_base();
+        AVRational v_tb = vEncPtr ? vEncPtr->get_vOut_time_base() : AVRational{ 0, 0 };
+        AVRational a_tb = aEncPtr ? aEncPtr->get_aOut_time_base() : AVRational{ 0, 0 };
+
+        // 检查是否为 only_video_or_audio ？
+        do
+        {
+            if ((v_tb.den + v_tb.num) == 0)
+                is_only_audio = true;
+            if ((a_tb.den + a_tb.num) == 0)
+                is_only_video = true;
+
+        } while (0);
 
         // 标志 Term 命令是否触发，以此执行结束逻辑
         bool done = false;
+
+        // 清空音频队列
+        if (!is_only_video && dshow_audioCap)
+        {
+            dshow_audioCap->drain_audio_fifo_size();
+        }
 
         while (true) 
         {
@@ -368,12 +412,31 @@ namespace streamer
                 // 由于视频采集逻辑的特殊性，这里简单处理为 -- 只处理音频队列(因为视频帧要硬解码，没有队列)
                 cmp = 1;
                 // 判断 Term 命令下发后，音频缓冲队列是否还有完整一帧数据可读，若无，直接 break
-                if (dshow_audioCap->get_audio_queue_size() < m_aEncoder->getCtx()->frame_size)
+                if(dshow_audioCap)
                 {
-                    LOG_DEBUG(g_logger) << "The audio_queue_size < nbSamples(" << m_aEncoder->getCtx()->frame_size << ')';
+                    if (dshow_audioCap->get_audio_queue_size() < m_aEncoder->getCtx()->frame_size)
+                    {
+                        LOG_DEBUG(g_logger) << "The audio_queue_size < nbSamples(" << m_aEncoder->getCtx()->frame_size << ')';
+                        break;
+                    }
+                }
+
+                // 只有video
+                if (!dshow_audioCap && is_only_video)
+                {
                     break;
                 }
             }
+
+            // 修正 cmp -- 根据 is_only_video/audio
+            do
+            {
+                if (is_only_video)
+                    cmp = -1;
+                else if (is_only_audio)
+                    cmp = 1;
+            } while (0);
+
 
             if (cmp <= 0) 
             {
@@ -405,35 +468,57 @@ namespace streamer
             }
 
             // 可选：无数据时小休眠防空转卡死
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            //std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
 
         // -- 退出，刷出编码器残留帧 Flush -- 优先视频，这里因为Flush设计思路，没有对最后的音视频帧做同步处理
         int ret = 0;
-        ret = m_vEncoder->Flush([&](AVPacket* pkt) { return m_muxer->WritePacket(pkt) ? 0 : -1; });
-        if (ret < 0)
+        if(m_vEncoder)
         {
-            LOG_WARN(g_logger) << "m_vEncoder->Flush([&](AVPacket* pkt) { return m_muxer->WritePacket(pkt) ? 0 : -1; });";
+            ret = m_vEncoder->Flush([&](AVPacket* pkt) { return m_muxer->WritePacket(pkt) ? 0 : -1; });
+            if (ret < 0)
+            {
+                LOG_WARN(g_logger) << "m_vEncoder->Flush([&](AVPacket* pkt) { return m_muxer->WritePacket(pkt) ? 0 : -1; });";
+            }
         }
 
-        m_aEncoder->Flush([&](AVPacket* pkt) { return m_muxer->WritePacket(pkt) ? 0 : -1; });
-        if (ret < 0)
+        if(m_aEncoder)
         {
-            LOG_WARN(g_logger) << "m_aEncoder->Flush([&](AVPacket* pkt) { return m_muxer->WritePacket(pkt) ? 0 : -1; });";
+            m_aEncoder->Flush([&](AVPacket* pkt) { return m_muxer->WritePacket(pkt) ? 0 : -1; });
+            if (ret < 0)
+            {
+                LOG_WARN(g_logger) << "m_aEncoder->Flush([&](AVPacket* pkt) { return m_muxer->WritePacket(pkt) ? 0 : -1; });";
+            }
         }
 
         LOG_DEBUG(g_logger) << "LocalFileStream::MuxThreadProc() is finished";
     }
 
-    bool LocalFileStreamer::send_MuxThreadProc_to_threads()
+    bool LocalFileStreamer::send_MuxThreadProc_to_threads(bool Immediately)
     {
-        int threads = SDL::GetInstance()->get_threads_counts();
-        // 开启音视频消费者线程
-        SDL::GetInstance()->push_thread_to_vector(std::bind(&LocalFileStreamer::MuxThreadProc, this));
-        if (threads == SDL::GetInstance()->get_threads_counts())
+        int threads = -1;
+
+        if (!Immediately)
         {
-            LOG_ERROR(g_logger) << "LocalFileStreamer::send_MuxThreadProc_to_threads() failed";
-            return false;
+            threads = SDL::GetInstance()->get_threadfuncs_counts();
+            // 注册线程函数，不是立即开启
+            SDL::GetInstance()->push_thread_to_vector(std::bind(&LocalFileStreamer::MuxThreadProc, this));
+            if (threads == SDL::GetInstance()->get_threadfuncs_counts())
+            {
+                LOG_ERROR(g_logger) << "LocalFileStreamer::send_MuxThreadProc_to_threads() failed";
+                return false;
+            }
+        }
+        else
+        {
+            threads = SDL::GetInstance()->get_threads_counts();
+            // 注册线程函数，不是立即开启
+            SDL::GetInstance()->push_threadfunc_to_threads(std::bind(&LocalFileStreamer::MuxThreadProc, this));
+            if (threads == SDL::GetInstance()->get_threads_counts())
+            {
+                LOG_ERROR(g_logger) << "LocalFileStreamer::send_MuxThreadProc_to_threads() failed";
+                return false;
+            }
         }
 
         return true;

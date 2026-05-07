@@ -264,6 +264,9 @@ namespace streamer {
         AVRational a_tb = aEncPtr->get_aOut_time_base();
 
         bool done = false;
+
+        // 首次来时，清空音频缓存队列，尝试一下，是否可以弥补差距，实在不行，就采用绝对时间基准，强制让video、audio(丢弃前面的帧)同步
+        dshow_audioCap->drain_audio_fifo_size();
     
         // Ensure to only encode when valid pointers exist to avoid crash if components missing
         while (true) 
@@ -292,7 +295,7 @@ namespace streamer {
                     if (vFrame && dxgiCap->isPass(v_frame_idx)) 
                     {
                         m_vEncoder->Encode(vFrame, [&](AVPacket* pkt) -> int {
-                            m_last_video_pts = pkt->dts != AV_NOPTS_VALUE ? pkt->dts : pkt->pts;
+                            m_last_video_pts = pkt->pts != AV_NOPTS_VALUE ? pkt->dts : pkt->pts;
                             return m_muxer->WritePacket(pkt) ? 0 : -1;
                             });
                         ++v_frame_idx;
@@ -307,14 +310,14 @@ namespace streamer {
                     if (aFrame) 
                     {
                         m_aEncoder->Encode(aFrame, [&](AVPacket* pkt) -> int {
-                            m_last_audio_pts = pkt->dts; // 修改为用 dts 或 pts 记录都可以，但是一定要记录
+                            m_last_audio_pts = pkt->pts; // 修改为用 dts 或 pts 记录都可以，但是一定要记录
                             return m_muxer->WritePacket(pkt) ? 0 : -1;
                             });
                     }
                 }
             }
 
-            //std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
 
         if (m_vEncoder) {

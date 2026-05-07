@@ -219,4 +219,24 @@ namespace streamer
 		return space;
 	}
 
+	bool AudioFifoQueue::drain_audio_fifo_size()
+	{
+		int cur_size = -1;
+		int ret = 0;
+		{
+			// 加锁
+			std::lock_guard<std::mutex> lock(m_mtx);
+			cur_size = av_audio_fifo_size(m_aFifoBuf);
+			ret = av_audio_fifo_drain(m_aFifoBuf, cur_size);
+			if (ret < 0)
+			{
+				LOG_ERROR(g_logger) << "av_audio_fifo_drain(m_aFifoBuf, cur_size) return ret < 0, ret= " << ret;
+				return false;
+			}
+			// LOG_INFO(g_logger) << "cur_size_drain: " << av_audio_fifo_size(m_aFifoBuf);
+		}
+
+		return true;
+	}
+
 }
