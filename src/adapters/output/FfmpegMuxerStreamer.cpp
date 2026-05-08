@@ -334,7 +334,6 @@ namespace streamer
     void LocalFileStreamer::MuxThreadProc()
     {
         // 在消费者线程中，才开始执行 avformat_open_input，现在这样调用非常不好，但是要改的太多了，未来再说
-        std::this_thread::sleep_for(std::chrono::milliseconds(10)); // 先 sleep 10ms，避免同时访问 SDL::m_threads
         do
         {
             // 创建封装器 -- 
@@ -443,14 +442,18 @@ namespace streamer
                 // ========= 视频时间更靠前，录制视频 ==============
                 // 此处为非阻塞等待，但是一旦视频"慢"了，在主循环中就会直接执行 cmp <= 0 分支，保证下一帧写入的一定是视频帧
                 FramePtr vFrame = dxgiCap->ReadFrame(v_frame_idx);
-                if (vFrame && dxgiCap->isPass(v_frame_idx)) 
+                if(vFrame)
                 {
-                    m_vEncoder->Encode(vFrame, [&](AVPacket* pkt) -> int {
-                        // 重调时间戳（如果编码器内没处理的话）
-                        m_last_video_pts = pkt->pts;
-                        return m_muxer->WritePacket(pkt) ? 0 : -1;
-                        });
-                    ++v_frame_idx;
+                    // 在有帧的情况下才做判断，否则会出现问题
+                    if (dxgiCap->isPass(v_frame_idx))
+                    {
+                        m_vEncoder->Encode(vFrame, [&](AVPacket* pkt) -> int {
+                            // 重调时间戳（如果编码器内没处理的话）
+                            m_last_video_pts = pkt->pts;
+                            return m_muxer->WritePacket(pkt) ? 0 : -1;
+                            });
+                        ++v_frame_idx;
+                    }
                 }
             }
             else

@@ -7,7 +7,7 @@ namespace streamer
 {
 	HwDevice_d3d11::HwDevice_d3d11()
 		:m_hw_device_ctx(nullptr),
-		TEXTURE_BUFFER_SIZE(4)
+		TEXTURE_BUFFER_SIZE(8)
 	{
 
 	}

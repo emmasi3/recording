@@ -1,5 +1,6 @@
 ﻿#define _CRT_SECURE_NO_WARNINGS
 #include "include\adapters\codec\FfmpegEncoder.h"
+#include "include\event\ThreadEventSDL.h"
 
 static streamer::ILogger::ptr g_logger = streamer::ILogger::ptr(new streamer::ConsoleLogger(streamer::LogLevel::Debug));
 
@@ -30,26 +31,36 @@ int main(int argc, char* argv[])
 	for (int i = 0; i < 1000; ++i)
 	{
 		streamer::FramePtr frame = dxgi->ReadFrame(i);
-		// 判断是否达到帧间隔
-		if (!dxgi->isPass(i) || !frame)
+
+		// 判断是否有帧
+		if (frame)
+		{
+			// 判断是否应该将该帧送入编码
+			if (!dxgi->isPass(i))
+			{
+				--i;
+				continue;
+			}
+
+			// 记录写入帧数量
+			ptr->Encode(frame, [&f](AVPacket* pkt) ->int {
+				if (!pkt)
+				{
+					LOG_ERROR(g_logger) << "pkt is empty";
+					return -1;
+				}
+
+				//LOG_INFO(g_logger) << "pkt->pts: " << pkt->pts << ", pkt->dts: " << pkt->dts;
+				fwrite(pkt->data, 1, pkt->size, f);
+
+				return 0;
+				});
+		}
+		else 
 		{
 			--i;
 			continue;
 		}
-		
-		// 记录写入帧数量
-		ptr->Encode(frame, [&f](AVPacket* pkt) ->int {
-			if (!pkt)
-			{
-				LOG_ERROR(g_logger) << "pkt is empty";
-				return -1;
-			}
-
-			//LOG_INFO(g_logger) << "pkt->pts: " << pkt->pts << ", pkt->dts: " << pkt->dts;
-			fwrite(pkt->data, 1, pkt->size, f);
-
-			return 0;
-		});
 
 
 	}

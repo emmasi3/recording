@@ -55,6 +55,7 @@ namespace streamer {
 	{
 		// 获取实际两帧间隔 ms
 		int64_t delta_time = QPC::GetInstance()->NowMs(false);
+		LOG_INFO(g_logger) << "delta_time: " << delta_time;
 		// 判断是否是 第 1 帧，因为第一帧需要无脑送进去，并且因为主循环中，i != 0 的情况居多，
 		// 为了防止分支预测错误的损耗叠加，将最可能的情况放到前面
 		if (i != 0)

@@ -5,7 +5,7 @@ static streamer::ILogger::ptr g_logger = streamer::ILogger::ptr(new streamer::Co
 
 static bool init()
 {
-	const std::string filename = "./data_out/av/test_Muxer_Streamer.mp4";
+	const std::string filename = "./data_out/av/test_Muxer_Streamer.h264";
 	static streamer::IStreamer::ptr str_ptr = streamer::LocalFileStreamer::createNew(filename);
 	if (!str_ptr)
 	{
