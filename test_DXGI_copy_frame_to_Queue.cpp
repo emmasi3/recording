@@ -61,7 +61,7 @@ int main(int argc, char* argv[])
     LOG_INFO(g_logger) << "hello, Start Testing DXGI + Queue";
 
     // 1. 初始化编码器，获取捕捉组件 DXGI (你的模式是强绑定的)
-    IEncoder::ptr ptr = VideoFfmpegEncoder::createNew(0, { 1, 25 });
+    IEncoder::ptr ptr = VideoFfmpegEncoder::createNew(0, { 1, 60 });
     VideoFfmpegEncoder::ptr ptr_video = std::dynamic_pointer_cast<VideoFfmpegEncoder>(ptr);
     if (!ptr_video)
     {

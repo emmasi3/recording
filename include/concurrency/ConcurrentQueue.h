@@ -87,7 +87,7 @@ public:
     }
 
     // 初始化队列，该派生类不需要
-    virtual bool Init_Queue() override{};
+    virtual bool Init_Queue() override { return true; };
 
     /// <summary>
     /// 线程安全入队。
