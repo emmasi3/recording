@@ -221,5 +221,8 @@
     <ClCompile Include="1、录制屏幕时出现的帧画面回退现象以及解决方法.cpp">
       <Filter>问题&amp;思考&amp;</Filter>
     </ClCompile>
+    <ClCompile Include="test_DXGI_copy_frame_to_Queue.cpp">
+      <Filter>test_moudle</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
