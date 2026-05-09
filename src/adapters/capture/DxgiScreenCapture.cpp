@@ -239,12 +239,6 @@ namespace streamer {
 		ComPtr<ID3D11Texture2D> dxgiTex;
 		desktopResource.As(&dxgiTex);
 
-		//if (hwFramePool.empty()) {
-		//	LOG_ERROR(g_logger) << "hwFramePool is empty!";
-		//	g_duplication->ReleaseFrame();
-		//	return nullptr;
-		//}
-
 		// 转换纹理格式
 		if (!ConvertDesktopBGRA_To_AVFrameNV12(dxgiTex.Get(), hwFramePool[m_curentIndex]))
 		{
@@ -518,21 +512,26 @@ namespace streamer {
 
 			if (frame)
 			{
-				// 检查这帧是否满足我们规定的 fps (dxgiCap 内的帧率控制机制）
+				// 不满足帧间隔
 				if (!isPass(frame_idx))
 				{
+					//LOG_INFO(g_logger) << "VideoCaptureThread() isPass()-false sleep_for 1ms";
+					std::this_thread::sleep_for(std::chrono::milliseconds(1));
 					continue; // 无效或不到时间，抛弃或重试
 				}
 
 				// 直接将提取出来的硬件帧扔到并发缓冲区
 				// 【重要】此处直接 Push。
 				m_video_queue->Push(frame);
-
+				//LOG_INFO(g_logger) << "m_video_queue->size: " << m_video_queue->GetQueueSize();
 				++frame_idx;
+
+				//LOG_INFO(g_logger) << "VideoCaptureThread() isPass()-true sleep_for 1ms";
+				//std::this_thread::sleep_for(std::chrono::milliseconds(1));
 			}
 			else
 			{
-				// 获取失败或超时，可以短暂 yield 放出CPU，但 dxgi AcquireNextFrame 本身带阻塞
+				// 获取失败或超时(获取超时, 不是达到了帧间隔)，可以短暂 yield 放出CPU，但 dxgi AcquireNextFrame 本身带阻塞
 				std::this_thread::yield();
 			}
 		}

@@ -290,10 +290,10 @@ namespace streamer
 		if (codec->id == AV_CODEC_ID_H264) // 私有设置，可以没有
 		{
 			//av_opt_set(m_ctx->priv_data, "preset", "slow", 0);		 // 仅启用这个选项会导致画面有回退现象！！！
-			av_opt_set(m_ctx->priv_data, "delay", "0", 0);
-			av_opt_set(m_ctx->priv_data, "preset", "llhq", 0);       // 使用为低延迟高画质预设，或者保持 slow
-			av_opt_set(m_ctx->priv_data, "rc-lookahead", "0", 0);    // 强制关闭前瞻
-			av_opt_set(m_ctx->priv_data, "zerolatency", "1", 0);     // 开启零延迟
+			av_opt_set(m_ctx->priv_data, "preset", "p4", 0);   // 性能/质量平衡（≈ 原 llhq）
+			av_opt_set(m_ctx->priv_data, "tune", "ll", 0);     // low-latency
+			av_opt_set(m_ctx->priv_data, "delay", "0", 0);     // 立刻输出
+			av_opt_set(m_ctx->priv_data, "rc-lookahead", "0", 0); // 禁用前瞻，避免 B 帧缓冲
 		}
 
 		/*
