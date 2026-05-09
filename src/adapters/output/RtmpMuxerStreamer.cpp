@@ -65,7 +65,7 @@ namespace streamer {
 
             if (!m_vEncoder)
             {
-                m_vEncoder = VideoFfmpegEncoder::createNew(v_outStream->index, AVRational{ 1, 25 });
+                m_vEncoder = VideoFfmpegEncoder::createNew(v_outStream->index, AVRational{ 1, 60 });
             }
 
             if (!m_vEncoder || !m_vEncoder->getCtx())

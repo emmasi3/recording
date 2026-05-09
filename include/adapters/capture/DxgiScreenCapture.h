@@ -1,8 +1,8 @@
 ﻿#pragma once
-
 #include "core/Interfaces.h"
 #include "Hwdevice_d3d11.h"
 #include "infra/Logger.h"
+#include "concurrency/ConcurrentQueue.h"
 
 #include <vector>
 
@@ -32,11 +32,23 @@ public:
     bool Open() override;
 
     /**
-    * @brief 读取一帧屏幕图像
+    * @brief 读取一帧屏幕图像，应该放入生产者线程调用，不应直接调用
     * @param i 帧索引，由 FfmpegEncoder 提供
     * @return 视频帧对象；无数据时可返回空
     */
-    FramePtr ReadFrame(int i = 1) override;
+    FramePtr ReadFrame(int i) override;
+
+    /*
+    * @brief 从视频队列中读取一帧，阻塞读取
+    * @return FramePtr 视频帧封装
+    */
+    FramePtr ReadFrame() override;
+
+    /*
+    * @brief 获取视频队列大小
+    * @return m_video_queue size
+    */
+    int GetQueueSize() const;
 
     /**
     * @brief 关闭 DXGI 采集资源
@@ -65,6 +77,13 @@ public:
         AVFrame* hwFrame
     );
 
+    /*
+    * @brief 私有方法，将生产者线程送入线程队列(注册或是)
+    * @param bool Immediately 是否立即开启线程，默认为 false，先注册，后续统一开启
+    * @return 送入是否成功
+    */
+    bool send_VideoCaptureThread_to_SDL_threads(bool Immediately = false);
+
 private:
     /*
     * @brief 创建(一次性) VideoProcessor 资源
@@ -87,6 +106,11 @@ private:
     // 转换纹理格式所需要的方法
     bool InitVP(BgraToNv12VP& s, UINT width, UINT height);
 
+    /*
+    * @brief video生产者线程，获取帧数据并送入阻塞队列
+    */
+    void VideoCaptureThread();
+
 
 private:
     HwDevice::ptr hw_device;
@@ -100,6 +124,8 @@ private:
     std::vector<AVFrame*> hwFramePool;
     // 硬件帧池索引
     int m_curentIndex;
+    // 视频帧队列(阻塞)
+    IConcurrentQueue<FramePtr>::ptr m_video_queue;
 };
 
 } // namespace streamer

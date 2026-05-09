@@ -9,14 +9,19 @@ namespace streamer {
 		hw_device(nullptr),
 		g_device(nullptr),
 		g_devCtx(nullptr),
+		m_video_queue(nullptr),
 		m_curentIndex(0)
 	{
+		// 创建硬件组件
 		hw_device = HwDevice_d3d11::createNew();
 		if (hw_device)
 		{
 			g_device = std::dynamic_pointer_cast<HwDevice_d3d11>(hw_device)->get_device();
 			g_devCtx = std::dynamic_pointer_cast<HwDevice_d3d11>(hw_device)->get_devCtx();
 		}
+
+		// 初始化组件 -- m_video_queue
+		m_video_queue = std::make_shared<BlockingQueue<FramePtr>>();
 	}
 
 	IScreenCapture::ptr DxgiScreenCapture::createNew(int fps)
@@ -37,7 +42,12 @@ namespace streamer {
 		Close();
 	}
 
-	void DxgiScreenCapture::Close() 
+	int DxgiScreenCapture::GetQueueSize() const
+	{
+		return m_video_queue->GetQueueSize();
+	}
+
+	void DxgiScreenCapture::Close()
 	{
 		// 释放硬件帧
 		for (auto& i : hwFramePool)
@@ -55,7 +65,7 @@ namespace streamer {
 	{
 		// 获取实际两帧间隔 ms
 		int64_t delta_time = QPC::GetInstance()->NowMs(false);
-		LOG_INFO(g_logger) << "delta_time: " << delta_time;
+		// LOG_INFO(g_logger) << "delta_time: " << delta_time;
 		// 判断是否是 第 1 帧，因为第一帧需要无脑送进去，并且因为主循环中，i != 0 的情况居多，
 		// 为了防止分支预测错误的损耗叠加，将最可能的情况放到前面
 		if (i != 0)
@@ -165,6 +175,13 @@ namespace streamer {
 		if (_pDXGITestAdapter) _pDXGITestAdapter->Release();
 		if (_pDXGITestDev) _pDXGITestDev->Release();
 
+		// 7、开启视频生产线程，这里启动不行，硬件帧池还没初始化呢，改变位置：line 72 FfmpegEncoder.cpp
+		//if (!send_VideoCaptureThread_to_SDL_threads(true))
+		//{
+		//	LOG_ERROR(g_logger) << "send_VideoCaptureThread_to_SDL_threads(true) failed";
+		//	return false;
+		//}
+
 		return true;
 	}
 
@@ -196,17 +213,18 @@ namespace streamer {
 				desktopResource = nullptr;
 			}
 
-			// 但是达到帧间隔
-			if (isPass(i, true))
+			// 但是达到帧间隔，并且 hwFramePool 并不是空的（尚未初始化导致崩溃）
+			if (isPass(i, true) && !hwFramePool.empty())
 			{
 				// 计算 sylar::currentIndex 的上一个索引
 				size_t prevIndex = (m_curentIndex + hwFramePool.size() - 1) % hwFramePool.size();
 				// 将上一帧给出
 				frame = hwFramePool[prevIndex];
-				// 接管
-				FramePtr ptr = std::make_shared<RawFrame>(FrameMeta{ MediaType::Video }, std::make_shared<FrameWrapper>(frame, false));
-
-				return ptr;
+				if (frame) {
+					// 接管
+					FramePtr ptr = std::make_shared<RawFrame>(FrameMeta{ MediaType::Video }, std::make_shared<FrameWrapper>(frame, false));
+					return ptr;
+				}
 			}
 
 			return nullptr;
@@ -220,6 +238,12 @@ namespace streamer {
 		// 成功拿到新帧
 		ComPtr<ID3D11Texture2D> dxgiTex;
 		desktopResource.As(&dxgiTex);
+
+		//if (hwFramePool.empty()) {
+		//	LOG_ERROR(g_logger) << "hwFramePool is empty!";
+		//	g_duplication->ReleaseFrame();
+		//	return nullptr;
+		//}
 
 		// 转换纹理格式
 		if (!ConvertDesktopBGRA_To_AVFrameNV12(dxgiTex.Get(), hwFramePool[m_curentIndex]))
@@ -241,6 +265,11 @@ namespace streamer {
 
 		return ptr;
     }
+
+	FramePtr DxgiScreenCapture::ReadFrame()
+	{
+		return m_video_queue->WaitAndPop();
+	}
 
 	int DxgiScreenCapture::init_hwFramePool(AVCodecContext* ctx, int TEXTURE_BUFFER_SIZE)
 	{
@@ -475,6 +504,73 @@ namespace streamer {
 
 		return true;
 	}
+
+	void DxgiScreenCapture::VideoCaptureThread()
+	{
+		LOG_INFO(g_logger) << "VideoCaptureThread started.";
+
+		int frame_idx = 0;
+		// 采集循环
+		while (SDL::GetInstance()->get_state() != STATE::Term)
+		{
+			// 以阻塞/超时的形式读取下一帧
+			FramePtr frame = ReadFrame(frame_idx);
+
+			if (frame)
+			{
+				// 检查这帧是否满足我们规定的 fps (dxgiCap 内的帧率控制机制）
+				if (!isPass(frame_idx))
+				{
+					continue; // 无效或不到时间，抛弃或重试
+				}
+
+				// 直接将提取出来的硬件帧扔到并发缓冲区
+				// 【重要】此处直接 Push。
+				m_video_queue->Push(frame);
+
+				++frame_idx;
+			}
+			else
+			{
+				// 获取失败或超时，可以短暂 yield 放出CPU，但 dxgi AcquireNextFrame 本身带阻塞
+				std::this_thread::yield();
+			}
+		}
+
+		// 最后封闭队列，通知消费者退出
+		m_video_queue->Close();
+		LOG_INFO(g_logger) << "VideoCaptureThread finished.";
+	}
+
+	bool DxgiScreenCapture::send_VideoCaptureThread_to_SDL_threads(bool Immediately)
+	{
+		int threads_counts = -1;
+		if (!Immediately)
+		{
+			threads_counts = SDL::GetInstance()->get_threadfuncs_counts();
+			// 注册线程函数(并不立即开启) -- 开始采集音频并送入队列
+			SDL::GetInstance()->push_thread_to_vector(std::bind(&DxgiScreenCapture::VideoCaptureThread, this));
+			if (threads_counts == SDL::GetInstance()->get_threadfuncs_counts())
+			{
+				LOG_ERROR(g_logger) << "SDL::GetInstance()->push_thread_to_vector(std::bind(DshowAudioCapture::ReadFrameFrom_device, this)); failed";
+				return false;
+			}
+		}
+		else
+		{
+			// 立即开启该线程，并送入线程数组
+			threads_counts = SDL::GetInstance()->get_threads_counts();
+			SDL::GetInstance()->push_threadfunc_to_threads(std::bind(&DxgiScreenCapture::VideoCaptureThread, this));
+			if (threads_counts == SDL::GetInstance()->get_threads_counts())
+			{
+				LOG_ERROR(g_logger) << "SDL::GetInstance()->push_threadfunc_to_threads(std::bind(DshowAudioCapture::ReadFrameFrom_device, this)); failed";
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 
 
 

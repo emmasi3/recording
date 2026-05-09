@@ -163,6 +163,12 @@ namespace streamer
 		return 0;
 	}
 
+	int AudioFifoQueue::GetQueueSize() const
+	{
+		LOG_WARN(g_logger) << "GetQueueSize() do not be defined, please to use to get_audio_queue_size()";
+		return -1;
+	}
+
 	void AudioFifoQueue::Close()
 	{
 		if(m_aFifoBuf)

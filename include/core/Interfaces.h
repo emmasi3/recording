@@ -76,22 +76,28 @@ public:
     virtual ~IScreenCapture() = default;
 
     /**
-     * @brief 打开采集设备
-     *
-     * @return 是否打开成功
-     */
+    * @brief 打开采集设备
+    *
+    * @return 是否打开成功
+    */
     virtual bool Open() = 0;
 
     /**
-     * @brief 读取一帧视频
-     * @param i 帧索引
-     * @return 视频帧对象；失败或无数据可返回空
-     */
-    virtual FramePtr ReadFrame(int i = 1) = 0;
+    * @brief 不应使用该方法，请使用 ReadFrame()读取，该方法由生产者线程调用
+    * @param i 帧索引
+    * @return 视频帧对象；失败或无数据可返回空
+    */
+    virtual FramePtr ReadFrame(int i) = 0;
+
+    /*
+    * @brief 从视频队列中读取一帧，阻塞读取
+    * @return FramePtr 视频帧封装
+    */
+    virtual FramePtr ReadFrame() = 0;
 
     /**
-     * @brief 关闭采集设备
-     */
+    * @brief 关闭采集设备
+    */
     virtual void Close() = 0;
 
     virtual bool isPass(int i, bool timeout = false) = 0;

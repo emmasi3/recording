@@ -66,6 +66,12 @@ public:
     */
     virtual int WaitAndPop(T item) = 0;
 
+    /*
+    * @brief 阻塞获取队列大小
+    * @return 队列大小
+    */
+    virtual int GetQueueSize() const = 0;
+
     /**
      * @brief 关闭队列并唤醒等待线程
      */
@@ -152,6 +158,19 @@ public:
         return 0;
     }
 
+    /*
+    * @brief 阻塞获取队列大小
+    * @return 队列大小
+    */
+    virtual int GetQueueSize() const override
+    {
+        {
+            // 加锁
+            std::unique_lock lock(m_mtx);
+            return m_q.size();
+        }
+    }
+
     /// <summary>
     /// 关闭队列并通知所有等待方。
     /// </summary>
@@ -170,7 +189,7 @@ private:
     /// <summary>队列关闭标记。</summary>
     bool m_closed{false};
     /// <summary>保护队列状态的互斥量。</summary>
-    std::mutex m_mtx;
+    mutable std::mutex m_mtx;
     /// <summary>用于阻塞等待数据到达。</summary>
     std::condition_variable m_cv;
 };
@@ -219,7 +238,7 @@ public:
     */
     virtual int WaitAndPop(AVFrame* item) override;
 
-
+    virtual int GetQueueSize() const override;
 
     /**
     * @brief 关闭队列并唤醒等待线程

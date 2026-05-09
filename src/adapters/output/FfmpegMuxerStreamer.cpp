@@ -1,12 +1,13 @@
 ﻿#include "adapters/output/FfmpegMuxerStreamer.h"
 #include "event/ThreadEventSDL.h"
 #include "adapters/capture/DshowAudioCapture.h"
+#include "adapters/capture/DxgiScreenCapture.h"
 
 namespace streamer
 {
     static streamer::ILogger::ptr g_logger = streamer::ILogger::ptr(new streamer::ConsoleLogger(streamer::LogLevel::Debug));
 
-    streamer::LocalMuxer::LocalMuxer(const std::string& filename)
+    LocalMuxer::LocalMuxer(const std::string& filename)
         :m_close(false),
         m_filename(filename),
         m_vEncoder(nullptr),
@@ -16,7 +17,7 @@ namespace streamer
     {
     }
 
-    streamer::LocalMuxer::~LocalMuxer()
+    LocalMuxer::~LocalMuxer()
     {
         if (!m_close)
         {
@@ -37,7 +38,7 @@ namespace streamer
         return ptr;
     }
 
-    bool streamer::LocalMuxer::Open()
+    bool LocalMuxer::Open()
     {
         int ret = 0;
         // 1、创建目标文件上下文，文件路径
@@ -389,10 +390,10 @@ namespace streamer
         bool done = false;
 
         // 清空音频队列
-        if (!is_only_video && dshow_audioCap)
-        {
-            dshow_audioCap->drain_audio_fifo_size();
-        }
+        //if (!is_only_video && dshow_audioCap)
+        //{
+        //    dshow_audioCap->drain_audio_fifo_size();
+        //}
 
         while (true) 
         {
@@ -408,23 +409,51 @@ namespace streamer
             // 执行done逻辑
             if (done)
             {
-                // 由于视频采集逻辑的特殊性，这里简单处理为 -- 只处理音频队列(因为视频帧要硬解码，没有队列)
-                cmp = 1;
-                // 判断 Term 命令下发后，音频缓冲队列是否还有完整一帧数据可读，若无，直接 break
-                if(dshow_audioCap)
+                // 静态局部变量标记 Term 命令下发后，音视频队列是否还有数据可读
+                static bool video_queue_empty = false;
+                static bool audio_queue_empty = false;
+                // 判断 Term 命令下发后，音频缓冲队列是否还有完整一帧数据可读，若无，标记
+                if(dshow_audioCap && !audio_queue_empty)
                 {
                     if (dshow_audioCap->get_audio_queue_size() < m_aEncoder->getCtx()->frame_size)
                     {
-                        LOG_DEBUG(g_logger) << "The audio_queue_size < nbSamples(" << m_aEncoder->getCtx()->frame_size << ')';
-                        break;
+                        LOG_INFO(g_logger) << "The audio_queue_size < nbSamples(" << m_aEncoder->getCtx()->frame_size << ')';
+                        audio_queue_empty = true;
+                    }
+                }
+                // 判断 Term 命令下发后，视频缓冲队列是否还有完整一帧数据可读，若无，标记
+                if (dxgiCap && !video_queue_empty)
+                {
+                    DxgiScreenCapture::ptr dxgiCap_ptr = std::dynamic_pointer_cast<DxgiScreenCapture>(dxgiCap);
+                    if (!dxgiCap_ptr)
+                    {
+                        LOG_ERROR(g_logger) << "dxgiCap_ptr = std::dynamic_pointer_cast<DxgiScreenCapture>(dxgiCap) return nullptr";
+                        return;
+                    }
+                    // 判断此时队列大小
+                    if (dxgiCap_ptr->GetQueueSize() == 0)
+                    {
+                        LOG_INFO(g_logger) << "The video_queue_size == 0";
+                        video_queue_empty = true;
                     }
                 }
 
-                // 只有video
-                if (!dshow_audioCap && is_only_video)
+                // 结束标记判断是否退出 “同步、编码” 主循环
+                if ((video_queue_empty || is_only_audio) 
+                    && (audio_queue_empty || is_only_video))
                 {
+                    LOG_INFO(g_logger) << "MuxThreadProc()::while(true) is break";
                     break;
                 }
+
+                // 修改同步结果 cmp
+                do
+                {
+                    if (video_queue_empty)
+                        cmp = 1;
+                    else if (audio_queue_empty)
+                        cmp = 0;
+                } while (0);
             }
 
             // 修正 cmp -- 根据 is_only_video/audio
@@ -436,29 +465,26 @@ namespace streamer
                     cmp = 1;
             } while (0);
 
-
+            // ========= 视频时间更靠前，录制视频 ==============
             if (cmp <= 0) 
             {
-                // ========= 视频时间更靠前，录制视频 ==============
-                // 此处为非阻塞等待，但是一旦视频"慢"了，在主循环中就会直接执行 cmp <= 0 分支，保证下一帧写入的一定是视频帧
-                FramePtr vFrame = dxgiCap->ReadFrame(v_frame_idx);
-                if(vFrame)
+                // 从video_queue阻塞队列中直接读取一帧数据
+                FramePtr vFrame = dxgiCap->ReadFrame();
+                // 如果队列关闭或者抛空返回 null（你的 WaitAndPop 需要能响应 Close 返回空，或者用 TryPop）
+                if (!vFrame)
                 {
-                    // 在有帧的情况下才做判断，否则会出现问题
-                    if (dxgiCap->isPass(v_frame_idx))
-                    {
-                        m_vEncoder->Encode(vFrame, [&](AVPacket* pkt) -> int {
-                            // 重调时间戳（如果编码器内没处理的话）
-                            m_last_video_pts = pkt->pts;
-                            return m_muxer->WritePacket(pkt) ? 0 : -1;
-                            });
-                        ++v_frame_idx;
-                    }
+                    continue;
                 }
+
+                m_vEncoder->Encode(vFrame, [&](AVPacket* pkt) -> int {
+                    // 重调时间戳（如果编码器内没处理的话）
+                    m_last_video_pts = pkt->pts;
+                    return m_muxer->WritePacket(pkt) ? 0 : -1;
+                    });
             }
+            // ========= 音频时间更靠前，录制音频 ==============
             else
             {
-                // ========= 音频时间更靠前，录制音频 ==============
                 // 此处为阻塞等待
                 FramePtr aFrame = audioCap->ReadFrame();
                 if (aFrame) 

@@ -68,6 +68,12 @@ namespace streamer
 		{
 			return nullptr;
 		}
+		// 开启视频生产线程
+		if (!dxgi_ptr->send_VideoCaptureThread_to_SDL_threads(true))
+		{
+			LOG_ERROR(g_logger) << "send_VideoCaptureThread_to_SDL_threads(true) failed";
+			return nullptr;
+		}
 
 		return ptr;
 	}
