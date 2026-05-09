@@ -98,7 +98,10 @@ public:
 
 private:
     void MuxThreadProc();
-    bool send_MuxThreadProc_to_threads();
+    /*
+    * @brief 送消费者线程到队列中，默认以注册形式给出
+    */
+    bool send_MuxThreadProc_to_threads(bool Immediately = false);
 
 private:
     IMuxer::ptr m_muxer;

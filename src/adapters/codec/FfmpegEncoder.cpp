@@ -301,7 +301,7 @@ namespace streamer
 		* 但是对于 .h264 这种格式的文件，该选项不能够勾选，每一帧必须有单独的 header——info，否则大多数播放器无法解析 .h264 文件，
 		* 但是对于大多数 封装格式 mp4、flv、mkv、mov···只需要开始有一个 header——info，就可以解析完成了，这和具体的格式有关
 		*/
-		//m_ctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+		m_ctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
 		// 创建 D3D11 硬件帧池
 		int ret = InitHWFrames_D3D11(hw_device_ctx, width, height);
