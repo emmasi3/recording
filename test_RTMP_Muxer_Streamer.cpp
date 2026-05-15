@@ -5,9 +5,10 @@ static streamer::ILogger::ptr g_logger = streamer::ILogger::ptr(new streamer::Co
 
 static bool init()
 {
+	const std::string BXC_Server_rtmp_url = "rtmp://127.0.0.1/live/test";
 	const std::string rtmp_url = "rtmp://127.0.0.1:1935/live/test001";
 
-	static streamer::IStreamer::ptr streamer_ptr = streamer::RtmpStreamer::createNew(rtmp_url);
+	static streamer::IStreamer::ptr streamer_ptr = streamer::RtmpStreamer::createNew(BXC_Server_rtmp_url);
 	if (!streamer_ptr)
 	{
 		return false;
