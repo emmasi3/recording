@@ -44,6 +44,7 @@ namespace streamer
         // 1、创建目标文件上下文，文件路径
         AVStream* v_outStream = nullptr;
         AVStream* a_outStream = nullptr;
+        char err_buf[AV_ERROR_MAX_STRING_SIZE] = {0};
 
         // 防止重复打开
         if (m_ctx)
@@ -175,7 +176,8 @@ namespace streamer
             ret = avio_open2(&m_ctx->pb, m_filename.c_str(), AVIO_FLAG_WRITE, nullptr, nullptr);
             if (ret < 0)
             {
-                LOG_ERROR(g_logger) << "avio_open2 failed: " << m_filename;
+                AVStrError::strerror(ret, err_buf, AV_ERROR_MAX_STRING_SIZE);
+                LOG_ERROR(g_logger) << "avio_open2 failed: " << m_filename << " strerror: " << err_buf;
                 return false;
             }
         }

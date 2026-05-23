@@ -5,8 +5,10 @@ static streamer::ILogger::ptr g_logger = streamer::ILogger::ptr(new streamer::Co
 
 static bool init()
 {
+	// const std::string win_filename = "../../data_out/av/test_Muxer_Streamer.mp4";
+	const std::string test_filename = "./test_Muxer_Streamer.mp4";
 	const std::string filename = "./data_out/av/test_Muxer_Streamer.mp4";
-	static streamer::IStreamer::ptr str_ptr = streamer::LocalFileStreamer::createNew(filename);
+	static streamer::IStreamer::ptr str_ptr = streamer::LocalFileStreamer::createNew(test_filename);
 	if (!str_ptr)
 	{
 		LOG_ERROR(g_logger) << "streamer::LocalFileStreamer::createNew() failed, LocalFile_Path= " << filename;

@@ -224,5 +224,8 @@
     <ClCompile Include="test_DXGI_copy_frame_to_Queue.cpp">
       <Filter>test_moudle</Filter>
     </ClCompile>
+    <ClCompile Include="直接运行recording.exe在Debug目录下，为什么打开媒体文件失败.cpp">
+      <Filter>问题&amp;思考&amp;</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

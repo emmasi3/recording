@@ -7,8 +7,9 @@ static bool init()
 {
 	const std::string BXC_Server_rtmp_url = "rtmp://127.0.0.1/live/test";
 	const std::string rtmp_url = "rtmp://127.0.0.1:1935/live/test001";
+	const std::string Linux_rtmp_server_url = "rtmp://192.168.147.131:1935/live/test";
 
-	static streamer::IStreamer::ptr streamer_ptr = streamer::RtmpStreamer::createNew(BXC_Server_rtmp_url);
+	static streamer::IStreamer::ptr streamer_ptr = streamer::RtmpStreamer::createNew(Linux_rtmp_server_url);
 	if (!streamer_ptr)
 	{
 		return false;
