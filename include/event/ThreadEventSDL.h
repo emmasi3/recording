@@ -23,7 +23,6 @@ namespace streamer
 	class SDL_event_Thread
 	{
 	public:
-		typedef std::shared_ptr<SDL_event_Thread> ptr;
 
 		SDL_event_Thread();
 
