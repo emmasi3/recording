@@ -19,6 +19,9 @@
     <Filter Include="问题&amp;思考&amp;">
       <UniqueIdentifier>{ddc48572-7105-4e5a-80bc-91c08eda3c4a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="面试&amp;&amp;项目拷打">
+      <UniqueIdentifier>{b7057a61-0b07-4a75-b11c-2751186d138f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\core\MediaTypes.h">
@@ -227,5 +230,25 @@
     <ClCompile Include="直接运行recording.exe在Debug目录下，为什么打开媒体文件失败.cpp">
       <Filter>问题&amp;思考&amp;</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="面试拷打_屏幕录制与RTMP推流_65问.md">
+      <Filter>面试&amp;&amp;项目拷打</Filter>
+    </None>
+    <None Include="二、9、总结.md">
+      <Filter>面试&amp;&amp;项目拷打</Filter>
+    </None>
+    <None Include="二、10、总结.md">
+      <Filter>面试&amp;&amp;项目拷打</Filter>
+    </None>
+    <None Include="二、11、总结.md">
+      <Filter>面试&amp;&amp;项目拷打</Filter>
+    </None>
+    <None Include="二、13、总结.md">
+      <Filter>面试&amp;&amp;项目拷打</Filter>
+    </None>
+    <None Include="二、10、总结--补充.md">
+      <Filter>面试&amp;&amp;项目拷打</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "core/Interfaces.h"
 #include "Hwdevice_d3d11.h"
 #include "infra/Logger.h"
@@ -103,7 +103,18 @@ private:
         ID3D11Texture2D** outTex,
         UINT* outSubresource);
 
-    // 转换纹理格式所需要的方法
+    /*
+    * @breif 创建实际渲染器实例
+    * @param s VideoProcessor视频处理器资源引用(用户自建)
+    * @param width 
+    * @param height
+    * @note 流程：
+    *   （1）从 D3D11 Device 查询 ID3D11VideoDevice 接口
+    *   （2）从 D3D11 DeviceContext 查询 ID3D11VideoContext 接口
+    *   （3）填充 D3D11_VIDEO_PROCESSOR_CONTENT_DESC 描述符（逐行扫描、60fps、实时播放模式）
+    *   （4）CreateVideoProcessorEnumerator → 查询硬件能力
+    *   （5）CreateVideoProcessor → 创建实际的视频处理器
+    */
     bool InitVP(BgraToNv12VP& s, UINT width, UINT height);
 
     /*

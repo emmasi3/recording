@@ -1,4 +1,4 @@
-﻿#include "adapters/capture/DxgiScreenCapture.h"
+#include "adapters/capture/DxgiScreenCapture.h"
 #include "core/Clock.h"
 
 namespace streamer {
@@ -72,7 +72,7 @@ namespace streamer {
 		{
 			// 间隔 >= (1000 / m_fps) 时，可以送入
 			// std::cout << sylar::delta_time << std::endl;
-			if (delta_time >= (1000 / m_fps))
+			if (delta_time >= (1000 * 1.0 / m_fps))
 			{
 				// 不是在超时逻辑中调用该函数，就更新时间帧
 				if (!timeout)
@@ -279,6 +279,14 @@ namespace streamer {
 				LOG_ERROR(g_logger) << "av_hwframe_get_buffer() failed!";
 				return -1;
 			}
+
+			//if (hwframe->buf)
+			//{
+			//	printf("count(pkt) = %d\n",
+			//		av_buffer_get_ref_count((const AVBufferRef*)(hwframe->buf)));
+			//}
+			// 每个都打印的 16;
+
 			// 放入数组
 			hwFramePool.push_back(hwframe);
 		}
@@ -330,6 +338,7 @@ namespace streamer {
 		}
 
 		D3D11_VIDEO_PROCESSOR_CONTENT_DESC contentDesc = {};
+		// 视频流是 “逐行扫描” 的
 		contentDesc.InputFrameFormat = D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;
 		contentDesc.InputFrameRate.Numerator = 60;
 		contentDesc.InputFrameRate.Denominator = 1;
@@ -339,14 +348,17 @@ namespace streamer {
 		contentDesc.InputHeight = height;
 		contentDesc.OutputWidth = width;
 		contentDesc.OutputHeight = height;
+		// 实时播放选项 -- GPU不会启用高精度算法处理图像
 		contentDesc.Usage = D3D11_VIDEO_USAGE_PLAYBACK_NORMAL;
 
+		//	CreateVideoProcessorEnumerator：查询硬件能力，产出枚举器对象；
 		hr = s.videoDev->CreateVideoProcessorEnumerator(&contentDesc, &s.vpEnum);
 		if (FAILED(hr)) {
 			LOG_ERROR(g_logger) << "CreateVideoProcessorEnumerator failed";
 			return false;
 		}
 
+		//	CreateVideoProcessor：创建实际渲染处理器，依赖枚举器作为入参。
 		hr = s.videoDev->CreateVideoProcessor(s.vpEnum.Get(), 0, &s.vp);
 		if (FAILED(hr)) {
 			LOG_ERROR(g_logger) << "CreateVideoProcessor failed";
@@ -373,8 +385,9 @@ namespace streamer {
 		D3D11_TEXTURE2D_DESC srcDesc = {};
 		srcBGRA->GetDesc(&srcDesc);
 
-		// 目标纹理 + 目标子资源索引（来自 AVFrame->data[1]）
+		// 确定目标纹理最终写入位置(dstTex)，目标纹理 + 目标子资源索引（来自 AVFrame->data[1]）
 		ComPtr<ID3D11Texture2D> dstTex;
+		// 纹理数组的索引，如果是普通纹理，一般为 0
 		UINT dstSubresource = 0;
 		if (!GetD3D11TextureFromAVFrame(hwFrame, &dstTex, &dstSubresource)) {
 			LOG_ERROR(g_logger) << "GetD3D11TextureFromAVFrame failed";
@@ -400,7 +413,9 @@ namespace streamer {
 			return false;
 		}
 
+		// 静态局部变量 -- 保证初始化一次
 		static BgraToNv12VP s_vp;
+		// 创建 or 更新，实际的 VideoProcessor && 渲染器
 		if (!InitVP(s_vp, srcDesc.Width, srcDesc.Height)) {
 			LOG_ERROR(g_logger) << "InitVP failed";
 			return false;
@@ -434,13 +449,15 @@ namespace streamer {
 			return false;
 		}
 
-		if (dstDesc.ArraySize > 1) {
+		if (dstDesc.ArraySize > 1) 
+		{
 			outViewDesc.ViewDimension = D3D11_VPOV_DIMENSION_TEXTURE2DARRAY;
 			outViewDesc.Texture2DArray.MipSlice = 0;
 			outViewDesc.Texture2DArray.FirstArraySlice = dstArraySlice;
 			outViewDesc.Texture2DArray.ArraySize = 1;
 		}
-		else {
+		else
+		{
 			outViewDesc.ViewDimension = D3D11_VPOV_DIMENSION_TEXTURE2D;
 			outViewDesc.Texture2D.MipSlice = 0;
 		}
@@ -471,6 +488,7 @@ namespace streamer {
 		outCS.RGB_Range = 0;
 		outCS.YCbCr_Matrix = 1; // BT.709
 		outCS.YCbCr_xvYCC = 0;
+		// 播放视频（MP4 / HEVC / H.264）必须用 16_235，否则画面发灰、对比度丢失；
 		outCS.Nominal_Range = D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_16_235;
 
 		s_vp.videoCtx->VideoProcessorSetStreamColorSpace(s_vp.vp.Get(), 0, &inCS);

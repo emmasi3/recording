@@ -1,4 +1,4 @@
-﻿#include "adapters/codec/FfmpegEncoder.h"
+#include "adapters/codec/FfmpegEncoder.h"
 #include "adapters/capture/DxgiScreenCapture.h"
 #include "adapters/capture/DshowAudioCapture.h"
 
@@ -338,8 +338,9 @@ namespace streamer
 		AVHWFramesContext* frames_ctx =
 			(AVHWFramesContext*)hw_frames_ref->data;
 
-		frames_ctx->format = AV_PIX_FMT_D3D11; // GPU Texture
-		frames_ctx->sw_format = AV_PIX_FMT_NV12;  // NVENC 支持
+		// 设置硬件帧上下文
+		frames_ctx->format = AV_PIX_FMT_D3D11;    // GPU Texture format
+		frames_ctx->sw_format = AV_PIX_FMT_NV12;  // 一般的硬件编码器可直接接收的格式
 		frames_ctx->width = width;
 		frames_ctx->height = height;
 		frames_ctx->initial_pool_size = TEXTURE_BUFFER_SIZE;
