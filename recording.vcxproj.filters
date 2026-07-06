@@ -247,7 +247,16 @@
     <None Include="二、13、总结.md">
       <Filter>面试&amp;&amp;项目拷打</Filter>
     </None>
-    <None Include="二、10、总结--补充.md">
+    <None Include="二、13、总结--补充.md">
+      <Filter>面试&amp;&amp;项目拷打</Filter>
+    </None>
+    <None Include="三、14、总结.md">
+      <Filter>面试&amp;&amp;项目拷打</Filter>
+    </None>
+    <None Include="三、15、总结.md">
+      <Filter>面试&amp;&amp;项目拷打</Filter>
+    </None>
+    <None Include="三、16、总结.md">
       <Filter>面试&amp;&amp;项目拷打</Filter>
     </None>
   </ItemGroup>

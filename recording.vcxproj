@@ -254,10 +254,21 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="二、10、总结--补充.md" />
-    <None Include="二、10、总结.md" />
-    <None Include="二、11、总结.md" />
-    <None Include="二、13、总结.md" />
+    <None Include="三、14、总结.md" />
+    <None Include="三、15、总结.md" />
+    <None Include="三、16、总结.md" />
+    <None Include="二、13、总结--补充.md">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </None>
+    <None Include="二、10、总结.md">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </None>
+    <None Include="二、11、总结.md">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </None>
+    <None Include="二、13、总结.md">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </None>
     <None Include="二、9、总结.md">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </None>
