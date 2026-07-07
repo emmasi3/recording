@@ -1,4 +1,4 @@
-﻿#include "adapters/output/FfmpegMuxerStreamer.h"
+#include "adapters/output/FfmpegMuxerStreamer.h"
 #include "event/ThreadEventSDL.h"
 #include "adapters/capture/DshowAudioCapture.h"
 #include "adapters/capture/DxgiScreenCapture.h"
@@ -82,6 +82,10 @@ namespace streamer
         const bool forceVideoOnly =
             (ext == "h264" || ext == "264" || ext == "h265" || ext == "265" || ext == "hevc");
 
+        /*
+        * @brief 检查该封装格式是否支持该媒体流
+        * 如：.h264，不支持音频相关的媒体流
+        */
         const bool ofmtHasVideo = (m_ctx->oformat->video_codec != AV_CODEC_ID_NONE);
         const bool ofmtHasAudio = (m_ctx->oformat->audio_codec != AV_CODEC_ID_NONE);
 

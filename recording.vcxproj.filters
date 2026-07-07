@@ -286,5 +286,35 @@
     <None Include="四、25、总结.md">
       <Filter>面试&amp;&amp;项目拷打</Filter>
     </None>
+    <None Include="五、26、总结.md">
+      <Filter>面试&amp;&amp;项目拷打</Filter>
+    </None>
+    <None Include="五、27、总结.md">
+      <Filter>面试&amp;&amp;项目拷打</Filter>
+    </None>
+    <None Include="五、28、总结.md">
+      <Filter>面试&amp;&amp;项目拷打</Filter>
+    </None>
+    <None Include="五、29、总结.md">
+      <Filter>面试&amp;&amp;项目拷打</Filter>
+    </None>
+    <None Include="五、30、总结.md">
+      <Filter>面试&amp;&amp;项目拷打</Filter>
+    </None>
+    <None Include="六、31、总结.md">
+      <Filter>面试&amp;&amp;项目拷打</Filter>
+    </None>
+    <None Include="六、32、总结.md">
+      <Filter>面试&amp;&amp;项目拷打</Filter>
+    </None>
+    <None Include="思考：2、关于RTMP交互流程的展示.md">
+      <Filter>问题&amp;思考&amp;</Filter>
+    </None>
+    <None Include="六、33、总结.md">
+      <Filter>面试&amp;&amp;项目拷打</Filter>
+    </None>
+    <None Include="六、34、总结.md">
+      <Filter>面试&amp;&amp;项目拷打</Filter>
+    </None>
   </ItemGroup>
 </Project>
