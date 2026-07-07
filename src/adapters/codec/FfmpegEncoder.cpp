@@ -339,8 +339,8 @@ namespace streamer
 			(AVHWFramesContext*)hw_frames_ref->data;
 
 		// 设置硬件帧上下文
-		frames_ctx->format = AV_PIX_FMT_D3D11;    // GPU Texture format
-		frames_ctx->sw_format = AV_PIX_FMT_NV12;  // 一般的硬件编码器可直接接收的格式
+		frames_ctx->format = AV_PIX_FMT_D3D11;    // 标识 -- 底层硬件表面类型的像素格式 -- AV_PIX_FMT_D3D11 是 FFmpeg 对"GPU 纹理帧"的抽象标签，不是其真实像素格式
+		frames_ctx->sw_format = AV_PIX_FMT_NV12;  // 一般的硬编码器可直接接收的格式 -- 这种格式才是标识 -- 像素排布格局的格式，和上面的不一样，上面的仅仅是表明是那种类型的底层设备的硬件帧
 		frames_ctx->width = width;
 		frames_ctx->height = height;
 		frames_ctx->initial_pool_size = TEXTURE_BUFFER_SIZE;

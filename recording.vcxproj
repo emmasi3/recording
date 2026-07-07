@@ -257,6 +257,12 @@
     <None Include="三、14、总结.md" />
     <None Include="三、15、总结.md" />
     <None Include="三、16、总结.md" />
+    <None Include="三、17、总结.md">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </None>
+    <None Include="三、18、总结.md">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </None>
     <None Include="二、13、总结--补充.md">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </None>
@@ -272,6 +278,15 @@
     <None Include="二、9、总结.md">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </None>
+    <None Include="四、19、总结.md">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </None>
+    <None Include="四、20、总结.md" />
+    <None Include="四、21、总结.md" />
+    <None Include="四、22、总结.md" />
+    <None Include="四、23、总结.md" />
+    <None Include="四、24、总结.md" />
+    <None Include="四、25、总结.md" />
     <None Include="面试拷打_屏幕录制与RTMP推流_65问.md">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </None>
