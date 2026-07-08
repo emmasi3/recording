@@ -291,7 +291,7 @@
 
 **43. 项目为什么 disable 拷贝、只保留移动？**
 
-> `FrameWrapper`、`PacketWrapper` 都禁用拷贝构造/赋值。因为它们封装了独占资源（`AVFrame*`、`AVPacket*`），如果拷贝，两个实例析构时都会释放同一内存（double free）。只允许 move 传递所有权。
+> `FrameWrapper`、`FrameWrapper` 都禁用拷贝构造/赋值。因为它们封装了独占资源（`AVFrame*`、`AVPacket*`），如果拷贝，两个实例析构时都会释放同一内存（double free）。只允许 move 传递所有权。
 
 **44. `AVPacketDeleter` 自定义删除器的设计意图？**
 

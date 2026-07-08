@@ -254,6 +254,12 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="atomic_memory_order_release_acquire详解.md" />
+    <None Include="七、35、总结.md" />
+    <None Include="七、36、总结.md" />
+    <None Include="七、37、总结.md" />
+    <None Include="七、38、总结.md" />
+    <None Include="七、39、总结.md" />
     <None Include="三、14、总结.md" />
     <None Include="三、15、总结.md" />
     <None Include="三、16、总结.md" />
@@ -283,6 +289,11 @@
     <None Include="五、28、总结.md" />
     <None Include="五、29、总结.md" />
     <None Include="五、30、总结.md" />
+    <None Include="八、40、总结.md" />
+    <None Include="八、41、总结.md" />
+    <None Include="八、42、总结.md" />
+    <None Include="八、43、总结.md" />
+    <None Include="八、44、总结.md" />
     <None Include="六、31、总结.md" />
     <None Include="六、32、总结.md" />
     <None Include="六、33、总结.md" />

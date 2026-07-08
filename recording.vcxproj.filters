@@ -316,5 +316,38 @@
     <None Include="六、34、总结.md">
       <Filter>面试&amp;&amp;项目拷打</Filter>
     </None>
+    <None Include="七、35、总结.md">
+      <Filter>面试&amp;&amp;项目拷打</Filter>
+    </None>
+    <None Include="七、36、总结.md">
+      <Filter>面试&amp;&amp;项目拷打</Filter>
+    </None>
+    <None Include="atomic_memory_order_release_acquire详解.md">
+      <Filter>问题&amp;思考&amp;</Filter>
+    </None>
+    <None Include="七、37、总结.md">
+      <Filter>面试&amp;&amp;项目拷打</Filter>
+    </None>
+    <None Include="七、38、总结.md">
+      <Filter>面试&amp;&amp;项目拷打</Filter>
+    </None>
+    <None Include="七、39、总结.md">
+      <Filter>面试&amp;&amp;项目拷打</Filter>
+    </None>
+    <None Include="八、40、总结.md">
+      <Filter>面试&amp;&amp;项目拷打</Filter>
+    </None>
+    <None Include="八、41、总结.md">
+      <Filter>面试&amp;&amp;项目拷打</Filter>
+    </None>
+    <None Include="八、42、总结.md">
+      <Filter>面试&amp;&amp;项目拷打</Filter>
+    </None>
+    <None Include="八、43、总结.md">
+      <Filter>面试&amp;&amp;项目拷打</Filter>
+    </None>
+    <None Include="八、44、总结.md">
+      <Filter>面试&amp;&amp;项目拷打</Filter>
+    </None>
   </ItemGroup>
 </Project>
