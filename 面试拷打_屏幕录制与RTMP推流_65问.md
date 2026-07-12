@@ -424,9 +424,15 @@
 
 **63. 本地文件（`LocalMuxer`）和 RTMP 推流（`RtmpMuxer`）在 Close 时有什么区别？**
 
-> - `LocalMuxer::Close()`：用 `avio_close` 关闭本地文件 IO
-> - `RtmpMuxer::Close()`：用 `avio_closep` 关闭网络 IO（并将指针置空）
-> 网络 IO 需要 `closep` 变体来同时释放指针，这是 FFmpeg API 的细节差异。
+> 两个 Muxer 在 Close 时分别使用了 avio_close 和 avio_closep，但这并非"网络 IO vs 本地 IO"的 API 设计差异——这只是项目中两段代码写法不一致。
+> avio_close 和 avio_closep 的唯一区别是：closep 接受 AVIOContext**，关闭后额外将 *s 置为 nullptr；avio_close 接受 AVIOContext*（传值），无法修改调用方的指针变量。底层释放逻辑完全相同，与协议类型（文件/RTMP/HTTP）无关。
+
+> 实际代码中：
+> RtmpMuxer::Close() 使用 avio_closep(&m_ctx->pb) → m_ctx->pb 被置 NULL，后续 avformat_free_context 安全
+> LocalMuxer::Close() 使用 avio_close(m_ctx->pb) → m_ctx->pb 沦为悬空指针（非 NULL 但已释放），后续 avformat_free_context 内部若检查 pb 非空并尝试关闭，即触发 use-after-free
+> 讽刺的是：LocalMuxer 的写法比 RtmpMuxer 更危险。正确做法应统一使用 avio_closep，或手动 m_ctx->pb = nullptr 后再调 avformat_free_context。
+
+> 更进一步的思考：既然 avformat_free_context 内部已负责关闭 pb（现代 FFmpeg 版本），最干净的写法是不手动调 avio_close/avio_closep，全部交给 avformat_free_context 统一管理。如果一定要手动关闭，必须用 closep 并将 ctx->pb 置 NULL。
 
 ---
 
