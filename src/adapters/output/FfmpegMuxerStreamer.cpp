@@ -396,10 +396,10 @@ namespace streamer
         bool done = false;
 
         // 清空音频队列
-        //if (!is_only_video && dshow_audioCap)
-        //{
-        //    dshow_audioCap->drain_audio_fifo_size();
-        //}
+        if (!is_only_video && dshow_audioCap)
+        {
+            dshow_audioCap->drain_audio_fifo_size();
+        }
 
         while (true) 
         {
@@ -471,8 +471,8 @@ namespace streamer
                     cmp = 1;
             } while (0);
 
-            // ========= 视频时间更靠前，录制视频 ==============
-            if (cmp <= 0) 
+            // ========= 视频慢了，录制视频 ==============
+            if (cmp < 0) 
             {
                 // 从video_queue阻塞队列中直接读取一帧数据
                 FramePtr vFrame = dxgiCap->ReadFrame();
@@ -484,11 +484,11 @@ namespace streamer
 
                 m_vEncoder->Encode(vFrame, [&](AVPacket* pkt) -> int {
                     // 重调时间戳（如果编码器内没处理的话）
-                    m_last_video_pts = pkt->pts;
+                    m_last_video_pts = pkt->dts;
                     return m_muxer->WritePacket(pkt) ? 0 : -1;
                     });
             }
-            // ========= 音频时间更靠前，录制音频 ==============
+            // ========= 音频慢了，录制音频 ==============
             else
             {
                 // 此处为阻塞等待
@@ -496,7 +496,7 @@ namespace streamer
                 if (aFrame) 
                 {
                     m_aEncoder->Encode(aFrame, [&](AVPacket* pkt) -> int {
-                        m_last_audio_pts = pkt->pts;
+                        m_last_audio_pts = pkt->dts;
                         return m_muxer->WritePacket(pkt) ? 0 : -1;
                         });
                 }
