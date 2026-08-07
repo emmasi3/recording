@@ -375,6 +375,14 @@ namespace streamer
         {
             LOG_ERROR(g_logger) << "std::dynamic_pointer_cast<streamer::DshowAudioCapture>(audioCap) return nullptr";
         }
+
+        // 获取视频采集器具体子类
+        auto dxgi_videoCap = std::dynamic_pointer_cast<streamer::DxgiScreenCapture>(dxgiCap);
+        if (!dxgi_videoCap && dxgiCap)
+        {
+            LOG_ERROR(g_logger) << "std::dynamic_pointer_cast<streamer::DshowAudioCapture>(audioCap) return nullptr";
+        }
+
         // 局部视频帧时间戳 -- 用来给到 dxgiCap->ReadFrame(v_frame_idx) 内部判断是否到时间了
         int64_t v_frame_idx = 0;
 
@@ -395,11 +403,23 @@ namespace streamer
         // 标志 Term 命令是否触发，以此执行结束逻辑
         bool done = false;
 
-        // 清空音频队列
+        // 清空 audio && video 缓冲区
+        /*
+        * @现象：（1）如果优先清理 audio 缓冲区，那么基本同步
+        *       （2）如果优先清理 video 缓冲区，那么 audio 跟不上 video（这里不是事件发生速率变快了，都是正常的，而是不能够同步采集，
+        *           所以有差距，但是在时间戳表现/处理方面，是正常的，也就是说和后续的同步策略没有关系，同步策略是稳定的，数据来源有时差而已！）
+        *       （3）补充一下，其实只要清理了 video 缓冲区，就会不同步，因为视频采集太高效了，而音频采集跟不上(这没有关系)，直接不清理 video！
+        */
         if (!is_only_video && dshow_audioCap)
         {
             dshow_audioCap->drain_audio_fifo_size();
         }
+        //if (!is_only_audio && dxgi_videoCap)
+        //{
+        //    dxgi_videoCap->Clear();
+        //}
+
+        
 
         while (true) 
         {
@@ -458,7 +478,7 @@ namespace streamer
                     if (video_queue_empty)
                         cmp = 1;
                     else if (audio_queue_empty)
-                        cmp = 0;
+                        cmp = -1;
                 } while (0);
             }
 
@@ -472,7 +492,8 @@ namespace streamer
             } while (0);
 
             // ========= 视频慢了，录制视频 ==============
-            if (cmp < 0) 
+            // 修改 cmp 时，必须注意逻辑，否则会引发死锁
+            if (cmp <= 0) 
             {
                 // 从video_queue阻塞队列中直接读取一帧数据
                 FramePtr vFrame = dxgiCap->ReadFrame();
@@ -484,7 +505,7 @@ namespace streamer
 
                 m_vEncoder->Encode(vFrame, [&](AVPacket* pkt) -> int {
                     // 重调时间戳（如果编码器内没处理的话）
-                    m_last_video_pts = pkt->dts;
+                    m_last_video_pts = pkt->pts;
                     return m_muxer->WritePacket(pkt) ? 0 : -1;
                     });
             }
@@ -496,7 +517,7 @@ namespace streamer
                 if (aFrame) 
                 {
                     m_aEncoder->Encode(aFrame, [&](AVPacket* pkt) -> int {
-                        m_last_audio_pts = pkt->dts;
+                        m_last_audio_pts = pkt->pts;
                         return m_muxer->WritePacket(pkt) ? 0 : -1;
                         });
                 }

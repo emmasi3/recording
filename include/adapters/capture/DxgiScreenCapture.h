@@ -84,6 +84,14 @@ public:
     */
     bool send_VideoCaptureThread_to_SDL_threads(bool Immediately = false);
 
+    /*
+    * @brief 清空视频帧缓冲区(生产者--消费者)
+    */
+    void Clear()
+    {
+        m_video_queue->Clear();
+    }
+
 private:
     /*
     * @brief 创建(一次性) VideoProcessor 资源

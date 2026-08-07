@@ -1,4 +1,4 @@
-﻿#include "include/adapters/output/FfmpegMuxerStreamer.h"
+#include "include/adapters/output/FfmpegMuxerStreamer.h"
 #include "event/ThreadEventSDL.h"
 
 static streamer::ILogger::ptr g_logger = streamer::ILogger::ptr(new streamer::ConsoleLogger(streamer::LogLevel::Debug));

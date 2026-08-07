@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "event/ThreadEventSDL.h"
 #include "libav_h.h"
 
@@ -71,6 +71,11 @@ public:
     * @return 队列大小
     */
     virtual int GetQueueSize() const = 0;
+
+    /*
+    * @brief 清空队列
+    */
+    virtual void Clear() {}
 
     /**
      * @brief 关闭队列并唤醒等待线程
@@ -156,6 +161,17 @@ public:
         item = std::move(m_q.front());
         m_q.pop();
         return 0;
+    }
+
+    /// <summary>
+    /// 清空队列（线程安全）。
+    /// @note 清空不会唤醒阻塞的 WaitAndPop 等待者，它们会继续等待新的 Push 或 Close。
+    /// @note 队列不负责释放裸指针元素，请确保元素为 RAII 封装。(内存泄漏)
+    /// </summary>
+    void Clear()
+    {
+        std::lock_guard<std::mutex> lock(m_mtx);
+        m_q = {};   // 整体替换为空容器，元素随析构释放
     }
 
     /*
